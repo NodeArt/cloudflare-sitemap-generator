@@ -1,5 +1,5 @@
 {
-  "name": "@nodeart/cloudflare-provisioning",
+  "name": "@nodeart/cloudflare-sitemap-generator",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
