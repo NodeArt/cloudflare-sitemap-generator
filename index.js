@@ -116,7 +116,7 @@ async function fetchExtendedSitePageInfo (url, pagePath, localeCode, proxy, retr
     return { blocks: {} }
   }
 
-  const pageURL = url + '/' + pagePath
+  const pageURL = url + '/' + pagePath + '?locale=' + localeCode
 
   try {
     const { statusCode, body } = await request(pageURL, {
@@ -126,6 +126,7 @@ async function fetchExtendedSitePageInfo (url, pagePath, localeCode, proxy, retr
         Accept: 'application/vnd.softswiss.v1+json',
         'content-type': 'application/json',
         'user-agent': 'sitemap-generator-ss',
+        locale_override: 'forbidden',
         'accept-language': localeCode
       }
     })
