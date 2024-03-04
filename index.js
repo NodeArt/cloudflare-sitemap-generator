@@ -272,6 +272,12 @@ async function updateXmlSiteWorker (siteConfig) {
 
   const xmlDocument = generateXML(siteConfig.BASE, pathsByLocale)
 
+  if (siteConfig.rewrite && siteConfig.rewrite.length > 0) {
+    siteConfig.rewrite.forEach(toReplace => {
+      xmlDocument = xmlDocument.replaceAll(toReplace,'')
+    })
+  }
+
   const xmlWorkerScriptTemplate = await fs.readFile(XML_WORKER_TEMPLATE_PATH, 'utf8')
   const xmlWorkerScript = xmlWorkerScriptTemplate.replace(XML_WORKER_TEMPLATE_TAG, xmlDocument)
 
