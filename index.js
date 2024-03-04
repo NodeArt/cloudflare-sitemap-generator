@@ -270,11 +270,11 @@ async function updateXmlSiteWorker (siteConfig) {
 
   proxy.close()
 
-  const xmlDocument = generateXML(siteConfig.BASE, pathsByLocale)
+  let xmlDocument = generateXML(siteConfig.BASE, pathsByLocale)
 
   if (siteConfig.rewrite && siteConfig.rewrite.length > 0) {
     siteConfig.rewrite.forEach(toReplace => {
-      xmlDocument = xmlDocument.replaceAll(toReplace,'')
+      xmlDocument = xmlDocument.replaceAll(toReplace, '')
     })
   }
 
