@@ -43,9 +43,10 @@ export const retry = async <T>(
   const _retry = async (i = 0) => {
     try {
       return await f();
-    } catch (error) {
-      if (i < retryCount) return _retry(i + 1);
-      else throw error;
+    } catch (err) {
+      if (i >= retryCount) throw err;
+      console.error(err);
+      return _retry(i + 1);
     }
   };
 
