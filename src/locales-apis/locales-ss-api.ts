@@ -25,8 +25,6 @@ const fetchSsLocales = async (url: string, request: Fetcher) => {
   }
 
   return res as Locale[];
-
-  // throw `Could not get site locales: ${error}`;
 };
 
 export const getLocalesFromSsApi = async (

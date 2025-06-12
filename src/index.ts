@@ -50,7 +50,6 @@ type WorkerConfig<Mode extends Strict | Loose = Loose> = {
   ? { config: BaseConfig<Strict> }
   : { config?: BaseConfig<Loose> });
 
-// export type Config = BaseConfig & { workers: WorkerConfig[] };
 export type Config =
   | (BaseConfig<Strict> & { workers: WorkerConfig<Loose>[] })
   | (BaseConfig<Loose> & { workers: WorkerConfig<Strict>[] });

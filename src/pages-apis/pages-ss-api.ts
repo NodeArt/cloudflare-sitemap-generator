@@ -29,8 +29,6 @@ const fetchSsPages = async (url: string, request: Fetcher) => {
   const res = await body.json();
 
   return res as PageInfo[];
-
-  // throw `Could not get site pages: ${error}`;
 };
 
 interface PageDetails {
@@ -125,30 +123,6 @@ export const getPagesFromSsApi = async (
         return false;
 
     return true;
-
-    // const include = [
-    //   filter.include?.ids?.some((id) => page.id == id) ?? false,
-    //   filter.include?.urls?.some((url) => new RegExp(url).test(page.path)) ??
-    //     false,
-    //   filter.include?.categories?.some((category) =>
-    //     page.categories?.includes(category)
-    //   ) ?? false,
-    // ];
-
-    // if (include.some((isSatisfied) => isSatisfied === false)) return false;
-
-    // const exclude = [
-    //   filter.exclude?.ids?.some((id) => page.id == id) ?? false,
-    //   filter.exclude?.urls?.some((url) => new RegExp(url).test(page.path)) ??
-    //     false,
-    //   filter.exclude?.categories?.some((category) =>
-    //     page.categories?.includes(category)
-    //   ) ?? false,
-    // ];
-
-    // if (exclude.some((isSatisfied) => isSatisfied === true)) return false;
-
-    // return true;
   };
 
   const allPaths: string[] = [];
