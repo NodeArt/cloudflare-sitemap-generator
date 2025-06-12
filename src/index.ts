@@ -1,5 +1,5 @@
 import path from "path";
-import { promises } from "fs";
+import { promises as fs } from "fs";
 
 import xmlBuilder from "xmlbuilder";
 
@@ -258,7 +258,7 @@ const getWorkerCode = async (sitemaps: Sitemap[], sitemapIndex: string) => {
   });
 
   const WORKER_TEMPLATE_PATH = path.join(__dirname, "worker-template.ts");
-  const template = await promises.readFile(WORKER_TEMPLATE_PATH, "utf8");
+  const template = await fs.readFile(WORKER_TEMPLATE_PATH, "utf8");
 
   const code = template.replace(
     "{}; // RESPONSES",
