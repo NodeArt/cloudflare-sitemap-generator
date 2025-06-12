@@ -45,8 +45,10 @@ export const useCf = (auth: AuthConfig, request: Fetcher) => {
         body: code,
       });
 
-      if (!ok)
-        throw `Could not update worker script: ${status}, ${body.text()}`;
+      if (!ok) {
+        const res = await body.text();
+        throw `Could not update worker script: ${status}, ${res}`;
+      }
     },
   };
 };
