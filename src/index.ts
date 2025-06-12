@@ -165,7 +165,7 @@ const generateSitemap = (baseURL: string, pages: Page[]) => {
 
 const generateSitemapIndex = (sitemaps: Sitemap[]) => {
   const xml = xmlBuilder
-    .create("urlset", { version: "1.0", encoding: "UTF-8" })
+    .create("sitemapindex", { version: "1.0", encoding: "UTF-8" })
     .att({
       xmlns: "http://www.sitemaps.org/schemas/sitemap/0.9",
       "xmlns:xhtml": "http://www.w3.org/1999/xhtml",
