@@ -46,8 +46,10 @@ const fetchGamesPages = async (url: string, request: Fetcher, page = 1) => {
     }),
   });
 
-  if (!ok)
-    throw `Games Pages API responded with NOT OK: ${status} (page: ${page})`;
+  if (!ok) {
+    const res = await body.text();
+    throw `Games Pages API responded with NOT OK: ${status} (page: ${page}) ${res}`;
+  }
 
   const res = await body.json();
 
