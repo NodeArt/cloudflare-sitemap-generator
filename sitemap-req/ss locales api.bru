@@ -1,0 +1,16 @@
+meta {
+  name: ss locales api
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{base-url}}/api/info/locales
+  body: none
+  auth: inherit
+}
+
+headers {
+  content-type: application/json
+  Accept: application/vnd.softswiss.v1+json
+}

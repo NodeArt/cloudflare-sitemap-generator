@@ -1,0 +1,31 @@
+meta {
+  name: games api
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base-url}}/api/games_filter
+  body: json
+  auth: inherit
+}
+
+headers {
+  accept: application/vnd.s.v2+json
+  content-type: application/json
+  pragma: no-cache
+  priority: u=1, i
+}
+
+body:json {
+  {
+    "device": "desktop",
+    "page": 1,
+    "without_territorial_restrictions": true,
+    "sort": {
+      "direction": "ASC",
+      "type": "global"
+    },
+    "page_size": 100
+  }
+}

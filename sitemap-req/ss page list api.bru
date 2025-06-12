@@ -1,0 +1,20 @@
+meta {
+  name: ss page list api
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{base-url}}/api/cms/pages
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~locale: de
+}
+
+headers {
+  ~locale_override: forbidden
+  ~accept-language: de
+}
