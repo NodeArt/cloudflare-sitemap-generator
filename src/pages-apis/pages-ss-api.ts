@@ -158,7 +158,7 @@ export const getPagesFromSsApi = async (
       }
 
       const getPriority = (): Priority => {
-        switch (path.split("/")[0]) {
+        switch (path.split("/")[+path.startsWith("/")]) {
           case "":
             return 1.0;
           case "games":
@@ -169,7 +169,7 @@ export const getPagesFromSsApi = async (
       };
 
       const getFreq = (): ChangeFrequency => {
-        switch (path.split("/")[0]) {
+        switch (path.split("/")[+path.startsWith("/")]) {
           case "":
             return "always";
           case "games":
