@@ -35,24 +35,34 @@ type ModuleConfig = {
 type Strict = "strict";
 type Loose = "loose";
 
-type BaseConfig<Mode extends Strict | Loose = Strict> = {
-  modules: ModuleConfig[];
+type BaseConfig<
+  BaseUrlMode extends Strict | Loose = Strict,
+  ModulesMode extends Strict | Loose = Strict
+> = {
   proxy?: ProxyConfig;
 } & FilterConfig &
   ReplaceConfig &
-  (Mode extends Strict ? { baseUrl: string } : { baseUrl?: string });
+  (BaseUrlMode extends Strict ? { baseUrl: string } : { baseUrl?: string }) &
+  (ModulesMode extends Strict
+    ? { modules: ModuleConfig[] }
+    : { modules?: ModuleConfig[] });
 
-type WorkerConfig<Mode extends Strict | Loose = Loose> = {
+type WorkerConfig<
+  BaseUrlMode extends Strict | Loose = Loose,
+  ModulesMode extends Strict | Loose = Loose
+> = {
   name: string;
   accountId: string;
   authToken: string;
-} & (Mode extends Strict
-  ? { config: BaseConfig<Strict> }
-  : { config?: BaseConfig<Loose> });
+} & (BaseUrlMode | ModulesMode extends Loose
+  ? { config?: BaseConfig<BaseUrlMode, ModulesMode> }
+  : { config: BaseConfig<BaseUrlMode, ModulesMode> });
 
 export type Config =
-  | (BaseConfig<Strict> & { workers: WorkerConfig<Loose>[] })
-  | (BaseConfig<Loose> & { workers: WorkerConfig<Strict>[] });
+  | (BaseConfig<Strict, Strict> & { workers: WorkerConfig<Loose, Loose>[] })
+  | (BaseConfig<Loose, Strict> & { workers: WorkerConfig<Strict, Loose>[] })
+  | (BaseConfig<Strict, Loose> & { workers: WorkerConfig<Loose, Strict>[] })
+  | (BaseConfig<Loose, Loose> & { workers: WorkerConfig<Strict, Strict>[] });
 
 type Module = {
   name: string;
@@ -74,34 +84,42 @@ type Worker = {
 };
 
 const aggregateConfigIntoWorkers = (config: Config): Worker[] =>
-  config.workers.map((worker: WorkerConfig<Strict | Loose>) => {
-    const workerConfig = {
-      baseUrl: worker.config?.baseUrl ?? config.baseUrl,
-      filter: worker.config?.filter ?? config.filter ?? {},
-      replace: worker.config?.replace ?? config.replace ?? [],
-      proxy: worker.config?.proxy ?? config.proxy,
-      modules: worker.config?.modules ?? config.modules,
-    };
+  config.workers.map(
+    (
+      worker:
+        | WorkerConfig<Loose, Loose>
+        | WorkerConfig<Strict, Loose>
+        | WorkerConfig<Loose, Strict>
+        | WorkerConfig<Strict, Strict>
+    ) => {
+      const workerConfig = {
+        baseUrl: worker.config?.baseUrl ?? config.baseUrl,
+        filter: worker.config?.filter ?? config.filter ?? {},
+        replace: worker.config?.replace ?? config.replace ?? [],
+        proxy: worker.config?.proxy ?? config.proxy,
+        modules: worker.config?.modules ?? config.modules ?? [],
+      };
 
-    if (workerConfig.baseUrl === undefined) throw "Missing baseUrl";
+      if (workerConfig.baseUrl === undefined) throw "Missing baseUrl";
 
-    return {
-      name: worker.name!,
-      accountId: worker.accountId!,
-      authToken: worker.authToken!,
-      proxy: workerConfig.proxy,
-      modules: workerConfig.modules!.map((module) => ({
-        name: module.name!,
-        localesListApi: module.localesListApi!,
-        pagesListApi: module.pagesListApi!,
-        forceSplitByLocale: module.forceSplitByLocale ?? false,
-        filter: module.filter ?? workerConfig.filter!,
-        replace: module.replace ?? workerConfig.replace!,
-        proxy: module.proxy ?? workerConfig.proxy,
-        baseUrl: workerConfig.baseUrl!,
-      })),
-    };
-  });
+      return {
+        name: worker.name!,
+        accountId: worker.accountId!,
+        authToken: worker.authToken!,
+        proxy: workerConfig.proxy,
+        modules: workerConfig.modules!.map((module) => ({
+          name: module.name!,
+          localesListApi: module.localesListApi!,
+          pagesListApi: module.pagesListApi!,
+          forceSplitByLocale: module.forceSplitByLocale ?? false,
+          filter: module.filter ?? workerConfig.filter!,
+          replace: module.replace ?? workerConfig.replace!,
+          proxy: module.proxy ?? workerConfig.proxy,
+          baseUrl: workerConfig.baseUrl!,
+        })),
+      };
+    }
+  );
 
 const generateUrl = (
   baseUrl: string,
