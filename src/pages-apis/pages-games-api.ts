@@ -88,24 +88,20 @@ export const getPagesFromGamesApi = async (
 
     if (filters === undefined) return true;
 
-    const satisfaction = [
-      filters.ids?.some((id) => page.identifier === id) ?? false,
-      filters.urls?.some((url) => new RegExp(url).test(page.seo_title)) ??
-        false,
+    const predicates = [
+      filters.ids?.some((id) => page.identifier === id),
+      filters.urls?.some((url) => new RegExp(url).test(page.seo_title)),
       filters.categories?.some((category) =>
         page.categories?.includes(category)
-      ) ?? false,
-      filters.providers?.some((provider) => page.provider === provider) ??
-        false,
+      ),
+      filters.providers?.some((provider) => page.provider === provider),
     ];
 
     if (filter.include)
-      if (satisfaction.some((isSatisfied) => isSatisfied === false))
-        return false;
+      if (predicates.some((isSatisfied) => isSatisfied === false)) return false;
 
     if (filter.exclude)
-      if (satisfaction.some((isSatisfied) => isSatisfied === true))
-        return false;
+      if (predicates.some((isSatisfied) => isSatisfied === true)) return false;
 
     return true;
   };

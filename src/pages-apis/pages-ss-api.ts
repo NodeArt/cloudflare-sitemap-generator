@@ -106,21 +106,19 @@ export const getPagesFromSsApi = async (
 
     if (filters === undefined) return true;
 
-    const satisfaction = [
-      filters.ids?.some((id) => page.id === id) ?? false,
-      filters.urls?.some((url) => new RegExp(url).test(page.path)) ?? false,
+    const predicates = [
+      filters.ids?.some((id) => page.id === id),
+      filters.urls?.some((url) => new RegExp(url).test(page.path)),
       filters.categories?.some((category) =>
         page.categories?.includes(category)
-      ) ?? false,
+      ),
     ];
 
     if (filter.include)
-      if (satisfaction.some((isSatisfied) => isSatisfied === false))
-        return false;
+      if (predicates.some((isSatisfied) => isSatisfied === false)) return false;
 
     if (filter.exclude)
-      if (satisfaction.some((isSatisfied) => isSatisfied === true))
-        return false;
+      if (predicates.some((isSatisfied) => isSatisfied === true)) return false;
 
     return true;
   };
