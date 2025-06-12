@@ -230,7 +230,7 @@ const getSitemaps = async (module: Module): Promise<Sitemap[]> => {
   if (totalPagesCount < PAGINATION_LIMIT)
     return [
       getSitemap(
-        module.name,
+        `sitemap-${module.name}`,
         pages.reduce(
           (allPages, locale) => [...allPages, ...locale.pages],
           [] as Page[]
