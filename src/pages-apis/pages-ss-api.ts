@@ -96,6 +96,8 @@ export const getPagesFromSsApi = async (
   locales: Locale[],
   filter: Filter
 ): Promise<{ locale: Locale; pages: Page[] }[]> => {
+  console.log("Getting Pages from SS API...");
+
   const pagesRaw = await retry(
     () => fetchSsPages(url, request),
     MAX_RETRY_COUNT
@@ -138,6 +140,7 @@ export const getPagesFromSsApi = async (
     const paths: string[] = [];
 
     for (const path of allPaths) {
+      console.log("Checking Page Details using SS API for", path, locale);
       const details = await fetchSSPageDetails(url, path, locale, request);
       if (details === null) continue;
       if (details.blocks?.noindex || details.blocks?.invisible_route) continue;

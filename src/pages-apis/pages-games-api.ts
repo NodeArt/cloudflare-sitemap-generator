@@ -69,10 +69,12 @@ export const getPagesFromGamesApi = async (
   locales: Locale[],
   filter: Filter
 ): Promise<{ locale: Locale; pages: Page[] }[]> => {
+  console.log("Getting Pages from Games API...");
   const pagesRaw: PageInfo[] = [];
 
   let page: number | null = 1;
   while (page !== null) {
+    console.log("Fetching Games from page", page);
     const res = await retry(
       () => fetchGamesPages(url, request, page!),
       MAX_RETRY_COUNT

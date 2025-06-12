@@ -182,8 +182,11 @@ const generateSitemapIndex = (sitemaps: Sitemap[]) => {
 const getPages = async (
   module: Module
 ): Promise<{ locale: Locale; pages: Page[] }[]> => {
+  console.log("Getting Pages for module", module.name);
+
   const { request } = useRequest(module.proxy);
 
+  console.log("Getting Locales List...");
   const { getLocales } = useLocalesApi(
     module.localesListApi.type,
     module.localesListApi.url.startsWith("/")
@@ -194,6 +197,7 @@ const getPages = async (
 
   const locales = await getLocales(module.filter);
 
+  console.log("Getting Pages List...");
   const { getPages } = usePagesApi(
     module.pagesListApi.type,
     module.pagesListApi.url.startsWith("/")
@@ -208,6 +212,8 @@ const getPages = async (
 };
 
 const getSitemaps = async (module: Module): Promise<Sitemap[]> => {
+  console.log("Getting Sitemaps for module", module.name);
+
   const PAGINATION_LIMIT = 1000;
 
   const pages = await getPages(module);
@@ -269,6 +275,8 @@ const getWorkerCode = async (sitemaps: Sitemap[], sitemapIndex: string) => {
 };
 
 const updateWorker = async (worker: Worker) => {
+  console.log("Updating Worker", worker.name);
+
   const sitemaps: Sitemap[] = [];
 
   for (const module of worker.modules)
@@ -277,6 +285,8 @@ const updateWorker = async (worker: Worker) => {
   const sitemapIndex = generateSitemapIndex(sitemaps);
 
   const workerCode = await getWorkerCode(sitemaps, sitemapIndex);
+
+  console.log("Updating worker with code", worker.name, workerCode);
 
   const { request } = useRequest(worker.proxy ?? null);
   const { uploadWorkerScript } = useCf({ token: worker.authToken }, request);

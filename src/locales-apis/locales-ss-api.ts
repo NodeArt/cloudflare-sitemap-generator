@@ -32,6 +32,8 @@ export const getLocalesFromSsApi = async (
   request: Fetcher,
   filter: Filter
 ): Promise<Locale[]> => {
+  console.log("Getting Locales from SS API...");
+
   const locales = await retry(
     () => fetchSsLocales(url, request),
     MAX_RETRY_COUNT
