@@ -3,6 +3,13 @@ import { Filter, Locale, retry } from "../utils";
 
 const MAX_RETRY_COUNT = 5;
 
+interface LocaleInfo {
+  code: string;
+  name: string;
+  name_in_locale: string;
+  default: boolean;
+}
+
 const fetchSsLocales = async (url: string, request: Fetcher) => {
   const { ok, status, body } = await request(url, {
     method: "GET",
@@ -17,14 +24,7 @@ const fetchSsLocales = async (url: string, request: Fetcher) => {
 
   const res = await body.json();
 
-  interface Locale {
-    code: string;
-    name: string;
-    name_in_locale: string;
-    default: boolean;
-  }
-
-  return res as Locale[];
+  return res as LocaleInfo[];
 };
 
 export const getLocalesFromSsApi = async (
