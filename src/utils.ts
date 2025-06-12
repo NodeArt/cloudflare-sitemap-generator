@@ -36,15 +36,18 @@ export type ChangeFrequency =
   | "monthly"
   | "yearly";
 
-export const retry = <T>(f: () => T, retryCount = 0): T => {
-  const _retry = (i = 0) => {
+export const retry = async <T>(
+  f: () => Promise<T> | T,
+  retryCount = 0
+): Promise<T> => {
+  const _retry = async (i = 0) => {
     try {
-      return f();
+      return await f();
     } catch (error) {
       if (i < retryCount) return _retry(i + 1);
       else throw error;
     }
   };
 
-  return _retry();
+  return await _retry();
 };
