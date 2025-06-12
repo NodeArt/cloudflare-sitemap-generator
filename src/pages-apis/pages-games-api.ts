@@ -74,7 +74,7 @@ export const getPagesFromGamesApi = async (
   let page: number | null = 1;
   while (page !== null) {
     const res = await retry(
-      () => fetchGamesPages(url, request),
+      () => fetchGamesPages(url, request, page!),
       MAX_RETRY_COUNT
     );
 
