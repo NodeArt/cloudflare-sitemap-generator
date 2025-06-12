@@ -50,10 +50,10 @@ export const useRequest = (
           status: res.status,
           headers: res.headers,
           body: {
-            blob: res.blob,
-            formData: res.formData,
-            json: res.json,
-            text: res.text,
+            blob: () => res.blob(),
+            formData: () => res.formData(),
+            json: () => res.json(),
+            text: () => res.text(),
           },
         })),
     };
@@ -72,10 +72,10 @@ export const useRequest = (
         status: res.statusCode,
         headers: res.headers,
         body: {
-          blob: res.body.blob,
-          formData: res.body.formData,
-          json: res.body.json,
-          text: res.body.text,
+          blob: () => res.body.blob(),
+          formData: () => res.body.formData(),
+          json: () => res.body.json(),
+          text: () => res.body.text(),
         },
       })),
   };
