@@ -239,8 +239,8 @@ const getSitemaps = async (module: Module): Promise<Sitemap[]> => {
       sitemaps.push(
         getSitemap(
           loc.pages.length < PAGINATION_LIMIT
-            ? `${module.name}-${loc.locale}`
-            : `${module.name}-${loc.locale}-${i + 1}`,
+            ? `sitemap-${module.name}-${loc.locale}`
+            : `sitemap-${module.name}-${loc.locale}-${i + 1}`,
           loc.pages.slice(i * PAGINATION_LIMIT, (i + 1) * PAGINATION_LIMIT)
         )
       );
