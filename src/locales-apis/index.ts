@@ -9,7 +9,7 @@ const getApiFetcher = (type: ApiType) => {
       return getLocalesFromSsApi;
 
     default:
-      throw "Unsupported locales-list API type";
+      throw new Error("Unsupported locales-list API type");
   }
 };
 

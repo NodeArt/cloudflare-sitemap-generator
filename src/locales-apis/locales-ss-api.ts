@@ -22,7 +22,7 @@ const fetchSsLocales = async (url: string, request: Fetcher) => {
     },
   });
 
-  if (!ok) throw `SS Locales API responded with NOT OK: ${status}`;
+  if (!ok) throw new Error(`SS Locales API responded with NOT OK: ${status}`);
 
   const res = await body.json();
 

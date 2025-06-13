@@ -13,7 +13,7 @@ const getApiFetcher = (type: ApiType) => {
       return getPagesFromGamesApi;
 
     default:
-      throw "Unsupported pages-list API type";
+      throw new Error("Unsupported pages-list API type");
   }
 };
 

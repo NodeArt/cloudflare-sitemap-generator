@@ -27,7 +27,7 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
         "X-Auth-Key": string;
       };
 
-    throw "Invalid CF auth config";
+    throw new Error("Invalid CF auth config");
   };
 
   const authHeaders = getAuthHeaders(auth);
@@ -64,7 +64,7 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
 
       if (!ok) {
         const res = await body.text();
-        throw `Could not update worker script: ${status}, ${res}`;
+        throw new Error(`Could not update worker script: ${status}, ${res}`);
       }
     },
   };

@@ -100,7 +100,8 @@ const aggregateConfigIntoWorkers = (config: Config): Worker[] =>
         modules: worker.config?.modules ?? config.modules ?? [],
       };
 
-      if (workerConfig.baseUrl === undefined) throw "Missing baseUrl";
+      if (workerConfig.baseUrl === undefined)
+        throw new Error("Missing baseUrl");
 
       return {
         name: worker.name!,
@@ -323,7 +324,7 @@ export const updateWorkers = async (config: {
     const response = config.response ?? worker.response ?? null;
 
     if (response === null)
-      throw `Response is NOT defined for worker ${worker.name}`;
+      throw new Error(`Response is NOT defined for worker ${worker.name}`);
 
     return { ...worker, response };
   });
