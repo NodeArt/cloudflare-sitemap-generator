@@ -263,8 +263,9 @@ const getWorkerCode = async (sitemaps: Sitemap[], sitemapIndex: string) => {
     responses[`/${name}.xml`] = xml;
   });
 
-  const WORKER_TEMPLATE_PATH = path.join(__dirname, "worker-template.ts");
-  const template = await fs.readFile(WORKER_TEMPLATE_PATH, "utf8");
+  const WORKER_TEMPLATE_PATH = "worker-template/sitemaps-worker.ts";
+  const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH);
+  const template = await fs.readFile(templateFullPath, "utf8");
 
   const code = template.replace(
     "{}; // RESPONSES",
