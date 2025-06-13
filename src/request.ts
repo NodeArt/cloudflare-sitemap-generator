@@ -68,8 +68,6 @@ export const useRequest = (
         ok: 200 <= res.statusCode && res.statusCode < 300,
         status: res.statusCode,
         body: {
-          blob: () => res.body.blob(),
-          formData: () => res.body.formData(),
           json: () => res.body.json(),
           text: () => res.body.text(),
         },
