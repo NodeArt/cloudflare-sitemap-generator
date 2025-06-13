@@ -62,9 +62,6 @@ export const useRequest = (
     connections: 5,
   });
 
-  const a = new FormData();
-  request("", { dispatcher: agent, body: a });
-
   return {
     request: async (input, init = {}) =>
       await request(input, { dispatcher: agent, ...init }).then((res) => ({
