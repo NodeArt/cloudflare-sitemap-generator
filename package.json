@@ -2,6 +2,8 @@
   "name": "@nodeart/cloudflare-sitemap-generator",
   "version": "2.1.0",
   "description": "",
+  "license": "ISC",
+  "author": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -10,8 +12,10 @@
     "prepare": "husky install",
     "build": "tsc && copyfiles -u 1 \"src/worker-templates/**/*\" dist"
   },
-  "author": "",
-  "license": "ISC",
+  "dependencies": {
+    "undici": "^7.10.0",
+    "xmlbuilder": "^15.1.1"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250613.0",
     "@types/node": "^24.0.1",
@@ -19,9 +23,5 @@
     "husky": "^8.0.3",
     "standard": "^17.1.2",
     "typescript": "^5.8.3"
-  },
-  "dependencies": {
-    "undici": "^7.10.0",
-    "xmlbuilder": "^15.1.1"
   }
 }
