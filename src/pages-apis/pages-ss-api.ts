@@ -155,7 +155,7 @@ export const getPagesFromSsApi = async (
     pages: paths.map((path) => {
       const alternates: { path: string; lang: string }[] = [];
       for (const otherLoc of pathsByLocales) {
-        // if (otherLoc.locale === locale) continue;
+        if (otherLoc.locale === locale) continue;
         if (otherLoc.paths.includes(path))
           alternates.push({ lang: otherLoc.locale, path });
       }
