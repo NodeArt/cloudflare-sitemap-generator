@@ -301,17 +301,40 @@ export const updateSitemap = async (config: Config) => {
 
 export const updateWorkers = async (config: {
   proxy?: ProxyConfig;
+
+  response?: {
+    contentType: string;
+    content: string;
+  };
+
   workers: {
     name: string;
     accountId: string;
     auth: CfAuthConfig;
-    contentType: string;
-    content: string;
+    response?: {
+      contentType: string;
+      content: string;
+    };
   }[];
 }) => {
   const { request } = useRequest(config.proxy);
 
-  for (const worker of config.workers) {
+  const workers = config.workers.map((worker) => {
+    const contentType =
+      worker.response?.contentType ?? config.response?.contentType ?? null;
+    const content =
+      worker.response?.content ?? config.response?.content ?? null;
+
+    if (contentType === null)
+      throw `ContentType is NOT defined for worker ${worker.name}`;
+
+    if (contentType === null || content === null)
+      throw `Content is NOT defined for worker ${worker.name}`;
+
+    return { ...worker, response: { contentType, content } };
+  });
+
+  for (const worker of workers) {
     console.log("Started updating worker", worker.name);
 
     const WORKER_TEMPLATE_PATH = "worker-templates/single-file-worker.ts";
@@ -319,8 +342,8 @@ export const updateWorkers = async (config: {
     const template = await fs.readFile(templateFullPath, "utf8");
 
     const code = template
-      .replace("$_CONTENT_TYPE_$", worker.contentType)
-      .replace("$_CONTENT_$", worker.content);
+      .replace("$_CONTENT_TYPE_$", worker.response.contentType)
+      .replace("$_CONTENT_$", worker.response.content);
 
     console.log("Updating worker with code", worker.name, code);
 
