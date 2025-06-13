@@ -3,8 +3,8 @@ import { promises as fs } from "fs";
 
 import xmlBuilder from "xmlbuilder";
 
-import { CfAuthConfig, useCf } from "./cf";
 import { useRequest, type ProxyConfig } from "./request";
+import { useCf, type CfAuthConfig } from "./cf";
 import { useLocalesApi } from "./locales-apis";
 import { usePagesApi } from "./pages-apis";
 

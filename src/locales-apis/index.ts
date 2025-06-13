@@ -1,6 +1,7 @@
 import { getLocalesFromSsApi } from "./locales-ss-api";
-import { Fetcher } from "../request";
-import { ApiType, Filter } from "../utils";
+
+import type { Fetcher } from "../request";
+import type { ApiType, Filter } from "../utils";
 
 const getApiFetcher = (type: ApiType) => {
   switch (type) {
