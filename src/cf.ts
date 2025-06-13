@@ -9,22 +9,20 @@ export type GlobalKeyAuthConfig = { email: string; key: string };
 export type CfAuthConfig = TokenAuthConfig | GlobalKeyAuthConfig;
 
 export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
-  const getAuthHeaders = (config: CfAuthConfig) => {
-    const token = (config as TokenAuthConfig).token;
+  type AuthHeaders =
+    | { Authorization: string }
+    | { "X-Auth-Email": string; "X-Auth-Key": string };
 
-    if (token !== undefined)
-      return { Authorization: `Bearer ${token}` } as { Authorization: string };
-
-    const email = (config as GlobalKeyAuthConfig).email;
-    const key = (config as GlobalKeyAuthConfig).key;
-
-    if (email !== undefined && key !== undefined)
+  const getAuthHeaders = (config: CfAuthConfig): AuthHeaders => {
+    if ("token" in config)
       return {
-        "X-Auth-Email": email,
-        "X-Auth-Key": key,
-      } as {
-        "X-Auth-Email": string;
-        "X-Auth-Key": string;
+        Authorization: `Bearer ${config.token}`,
+      };
+
+    if ("email" in config && "key" in config)
+      return {
+        "X-Auth-Email": config.email,
+        "X-Auth-Key": config.key,
       };
 
     throw new Error("Invalid CF auth config");
