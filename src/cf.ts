@@ -4,10 +4,10 @@ const CLOUDFLARE_API_URL = "https://api.cloudflare.com/client/v4/";
 
 export type TokenAuthConfig = { token: string };
 export type GlobalKeyAuthConfig = { email: string; key: string };
-export type AuthConfig = TokenAuthConfig | GlobalKeyAuthConfig;
+export type CfAuthConfig = TokenAuthConfig | GlobalKeyAuthConfig;
 
-export const useCf = (auth: AuthConfig, request: Fetcher) => {
-  const getAuthHeaders = (config: AuthConfig) => {
+export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
+  const getAuthHeaders = (config: CfAuthConfig) => {
     const token = (config as TokenAuthConfig).token;
 
     if (token !== undefined)

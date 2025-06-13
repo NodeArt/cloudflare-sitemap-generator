@@ -3,7 +3,7 @@ import { promises as fs } from "fs";
 
 import xmlBuilder from "xmlbuilder";
 
-import { useCf } from "./cf";
+import { CfAuthConfig, useCf } from "./cf";
 import { useRequest, type ProxyConfig } from "./request";
 import { useLocalesApi } from "./locales-apis";
 import { usePagesApi } from "./pages-apis";
@@ -53,7 +53,7 @@ type WorkerConfig<
 > = {
   name: string;
   accountId: string;
-  authToken: string;
+  auth: CfAuthConfig;
 } & (BaseUrlMode | ModulesMode extends Loose
   ? { config?: BaseConfig<BaseUrlMode, ModulesMode> }
   : { config: BaseConfig<BaseUrlMode, ModulesMode> });
@@ -78,7 +78,7 @@ type Module = {
 type Worker = {
   name: string;
   accountId: string;
-  authToken: string;
+  auth: CfAuthConfig;
   proxy?: ProxyConfig;
   modules: Module[];
 };
@@ -105,7 +105,7 @@ const aggregateConfigIntoWorkers = (config: Config): Worker[] =>
       return {
         name: worker.name!,
         accountId: worker.accountId!,
-        authToken: worker.authToken!,
+        auth: worker.auth!,
         proxy: workerConfig.proxy,
         modules: workerConfig.modules!.map((module) => ({
           name: module.name!,
@@ -290,7 +290,7 @@ const updateWorker = async (worker: Worker) => {
   console.log("Updating worker with code", worker.name, workerCode);
 
   const { request } = useRequest(worker.proxy ?? null);
-  const { uploadWorkerScript } = useCf({ token: worker.authToken }, request);
+  const { uploadWorkerScript } = useCf(worker.auth, request);
   await uploadWorkerScript(worker.accountId, worker.name, workerCode);
 };
 
@@ -304,7 +304,7 @@ export const updateWorkers = async (config: {
   workers: {
     name: string;
     accountId: string;
-    authToken: string;
+    auth: CfAuthConfig;
     contentType: string;
     content: string;
   }[];
@@ -324,7 +324,7 @@ export const updateWorkers = async (config: {
 
     console.log("Updating worker with code", worker.name, code);
 
-    const { uploadWorkerScript } = useCf({ token: worker.authToken }, request);
+    const { uploadWorkerScript } = useCf(worker.auth, request);
     await uploadWorkerScript(worker.accountId, worker.name, code);
   }
 };
