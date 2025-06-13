@@ -56,7 +56,7 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
 
       const { ok, status, body } = await request(url, {
         method: "PUT",
-        headers: { "Content-Type": "multipart/form-data", ...authHeaders },
+        headers: { ...authHeaders },
         body: data,
       });
 
