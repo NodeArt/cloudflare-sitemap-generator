@@ -263,7 +263,7 @@ const getWorkerCode = async (sitemaps: Sitemap[], sitemapIndex: string) => {
     responses[`/${name}.xml`] = xml;
   });
 
-  const WORKER_TEMPLATE_PATH = "worker-template/sitemaps-worker.ts";
+  const WORKER_TEMPLATE_PATH = "worker-templates/sitemaps-worker.ts";
   const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH);
   const template = await fs.readFile(templateFullPath, "utf8");
 
@@ -312,7 +312,7 @@ export const updateWorkers = async (config: {
   const { request } = useRequest(config.proxy);
 
   for (const worker of config.workers) {
-    const WORKER_TEMPLATE_PATH = "worker-template/single-file-worker.ts";
+    const WORKER_TEMPLATE_PATH = "worker-templates/single-file-worker.ts";
     const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH);
     const template = await fs.readFile(templateFullPath, "utf8");
 
