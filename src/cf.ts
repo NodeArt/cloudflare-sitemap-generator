@@ -39,17 +39,19 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
       code: string,
       moduleSyntax = true
     ) => {
-      const blob = new Blob([code], { type: "text/typescript" });
+      const file = new File([code], "worker.js", { type: "text/javascript" });
 
       const data = new FormData();
 
-      data.append("code", blob, "worker.ts");
+      data.append("worker.js", file);
       data.append(
         "metadata",
         JSON.stringify(
-          moduleSyntax ? { main_module: "code" } : { body_part: "code" }
+          moduleSyntax
+            ? { main_module: "worker.js" }
+            : { body_part: "worker.js" }
         )
-      );
+      ); // compatibility_date: "2025-01-01"
 
       const url =
         CLOUDFLARE_API_URL + `accounts/${accountId}/workers/scripts/${name}`;

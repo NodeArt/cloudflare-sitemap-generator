@@ -263,7 +263,7 @@ const getWorkerCode = async (sitemaps: Sitemap[], sitemapIndex: string) => {
     responses[`/${name}.xml`] = xml;
   });
 
-  const WORKER_TEMPLATE_PATH = "worker-templates/sitemaps-worker.ts";
+  const WORKER_TEMPLATE_PATH = "worker-templates/sitemaps-worker.js";
   const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH);
   const template = await fs.readFile(templateFullPath, "utf8");
 
@@ -291,7 +291,7 @@ const updateWorker = async (worker: Worker) => {
 
   const { request } = useRequest(worker.proxy ?? null);
   const { uploadWorkerScript } = useCf(worker.auth, request);
-  await uploadWorkerScript(worker.accountId, worker.name, workerCode);
+  await uploadWorkerScript(worker.accountId, worker.name, workerCode, false);
 };
 
 export const updateSitemap = async (config: Config) => {
@@ -331,7 +331,7 @@ export const updateWorkers = async (config: {
   for (const worker of workers) {
     console.log("Started updating worker", worker.name);
 
-    const WORKER_TEMPLATE_PATH = "worker-templates/single-file-worker.ts";
+    const WORKER_TEMPLATE_PATH = "worker-templates/single-file-worker.js";
     const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH);
     const template = await fs.readFile(templateFullPath, "utf8");
 
@@ -342,6 +342,6 @@ export const updateWorkers = async (config: {
     console.log("Updating worker with code", worker.name, code);
 
     const { uploadWorkerScript } = useCf(worker.auth, request);
-    await uploadWorkerScript(worker.accountId, worker.name, code);
+    await uploadWorkerScript(worker.accountId, worker.name, code, false);
   }
 };
