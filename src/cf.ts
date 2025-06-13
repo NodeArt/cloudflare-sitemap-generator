@@ -1,4 +1,6 @@
-import { type Fetcher } from "./request";
+import { FormData } from "undici";
+
+import type { Fetcher } from "./request";
 
 const CLOUDFLARE_API_URL = "https://api.cloudflare.com/client/v4/";
 
@@ -34,15 +36,28 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
     uploadWorkerScript: async (
       accountId: string,
       name: string,
-      code: string
+      code: string,
+      moduleSyntax = true
     ) => {
+      const blob = new Blob([code], { type: "text/typescript" });
+
+      const data = new FormData();
+
+      data.append("code", blob, "worker.ts");
+      data.append(
+        "metadata",
+        JSON.stringify(
+          moduleSyntax ? { main_module: "code" } : { body_part: "code" }
+        )
+      );
+
       const url =
         CLOUDFLARE_API_URL + `accounts/${accountId}/workers/scripts/${name}`;
 
       const { ok, status, body } = await request(url, {
         method: "PUT",
-        headers: { "Content-Type": "application/javascript", ...authHeaders },
-        body: code,
+        headers: { "Content-Type": "multipart/form-data", ...authHeaders },
+        body: data,
       });
 
       if (!ok) {
