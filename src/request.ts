@@ -1,4 +1,4 @@
-import { request, ProxyAgent } from "undici";
+import { fetch, request, ProxyAgent, FormData } from "undici";
 
 export type ProxyConfig = {
   url: string;
@@ -20,16 +20,14 @@ export type HttpMethod =
 export type HttpOptions = {
   method?: HttpMethod;
   headers?: Record<string, string>;
-  body?: string;
+  body?: string | FormData;
 };
 
 export type HttpResponse = {
   ok: boolean;
   status: number;
-  headers: Headers | Record<string, string | string[] | undefined>;
   body: {
     text(): Promise<string>;
-    formData(): Promise<FormData>;
     json(): Promise<any>;
   };
 };
@@ -45,17 +43,16 @@ export const useRequest = (
   if (proxy === null)
     return {
       request: async (input, init = {}) =>
-        await fetch(input, init).then((res) => ({
-          ok: res.ok,
-          status: res.status,
-          headers: res.headers,
-          body: {
-            blob: () => res.blob(),
-            formData: () => res.formData(),
-            json: () => res.json(),
-            text: () => res.text(),
-          },
-        })),
+        await fetch(input, init).then((res) => {
+          return {
+            ok: res.ok,
+            status: res.status,
+            body: {
+              json: () => res.json(),
+              text: () => res.text(),
+            },
+          };
+        }),
     };
 
   const agent = new ProxyAgent({
@@ -65,12 +62,14 @@ export const useRequest = (
     connections: 5,
   });
 
+  const a = new FormData();
+  request("", { dispatcher: agent, body: a });
+
   return {
     request: async (input, init = {}) =>
       await request(input, { dispatcher: agent, ...init }).then((res) => ({
         ok: 200 <= res.statusCode && res.statusCode < 300,
         status: res.statusCode,
-        headers: res.headers,
         body: {
           blob: () => res.body.blob(),
           formData: () => res.body.formData(),
