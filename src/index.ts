@@ -298,3 +298,29 @@ export const updateSitemap = async (config: Config) => {
   const workers = aggregateConfigIntoWorkers(config);
   for (const worker of workers) await updateWorker(worker);
 };
+
+export const updateWorkers = async (config: {
+  proxy?: ProxyConfig;
+  workers: {
+    name: string;
+    accountId: string;
+    authToken: string;
+    contentType: string;
+    content: string;
+  }[];
+}) => {
+  const { request } = useRequest(config.proxy);
+
+  for (const worker of config.workers) {
+    const WORKER_TEMPLATE_PATH = "worker-template/single-file-worker.ts";
+    const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH);
+    const template = await fs.readFile(templateFullPath, "utf8");
+
+    const code = template
+      .replace("$_CONTENT_TYPE_$", worker.contentType)
+      .replace("$_CONTENT_$", worker.content);
+
+    const { uploadWorkerScript } = useCf({ token: worker.authToken }, request);
+    await uploadWorkerScript(worker.accountId, worker.name, code);
+  }
+};
