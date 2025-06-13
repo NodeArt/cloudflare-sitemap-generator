@@ -44,12 +44,13 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
       data.append("worker.js", file);
       data.append(
         "metadata",
-        JSON.stringify(
-          moduleSyntax
+        JSON.stringify({
+          ...(moduleSyntax
             ? { main_module: "worker.js" }
-            : { body_part: "worker.js" }
-        )
-      ); // compatibility_date: "2025-01-01"
+            : { body_part: "worker.js" }),
+          compatibility_date: "2025-01-01",
+        })
+      );
 
       const url =
         CLOUDFLARE_API_URL + `accounts/${accountId}/workers/scripts/${name}`;
