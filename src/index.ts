@@ -312,6 +312,8 @@ export const updateWorkers = async (config: {
   const { request } = useRequest(config.proxy);
 
   for (const worker of config.workers) {
+    console.log("Started updating worker", worker.name);
+
     const WORKER_TEMPLATE_PATH = "worker-templates/single-file-worker.ts";
     const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH);
     const template = await fs.readFile(templateFullPath, "utf8");
@@ -319,6 +321,8 @@ export const updateWorkers = async (config: {
     const code = template
       .replace("$_CONTENT_TYPE_$", worker.contentType)
       .replace("$_CONTENT_$", worker.content);
+
+    console.log("Updating worker with code", worker.name, code);
 
     const { uploadWorkerScript } = useCf({ token: worker.authToken }, request);
     await uploadWorkerScript(worker.accountId, worker.name, code);
