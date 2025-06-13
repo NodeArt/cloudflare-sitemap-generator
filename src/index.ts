@@ -320,18 +320,12 @@ export const updateWorkers = async (config: {
   const { request } = useRequest(config.proxy);
 
   const workers = config.workers.map((worker) => {
-    const contentType =
-      worker.response?.contentType ?? config.response?.contentType ?? null;
-    const content =
-      worker.response?.content ?? config.response?.content ?? null;
+    const response = config.response ?? worker.response ?? null;
 
-    if (contentType === null)
-      throw `ContentType is NOT defined for worker ${worker.name}`;
+    if (response === null)
+      throw `Response is NOT defined for worker ${worker.name}`;
 
-    if (contentType === null || content === null)
-      throw `Content is NOT defined for worker ${worker.name}`;
-
-    return { ...worker, response: { contentType, content } };
+    return { ...worker, response };
   });
 
   for (const worker of workers) {
