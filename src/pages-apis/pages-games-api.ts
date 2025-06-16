@@ -48,7 +48,9 @@ const fetchGamesPages = async (url: string, request: Fetcher, page = 1) => {
 
   if (!ok) {
     const res = await body.text();
-    throw `Games Pages API responded with NOT OK: ${status} (page: ${page}) ${res}`;
+    throw new Error(
+      `Games Pages API responded with NOT OK: ${status} (page: ${page}) ${res}`
+    );
   }
 
   const res = await body.json();
