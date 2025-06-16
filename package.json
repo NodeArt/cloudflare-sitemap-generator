@@ -1,23 +1,27 @@
 {
   "name": "@nodeart/cloudflare-sitemap-generator",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "",
-  "main": "src/index.ts",
+  "license": "ISC",
+  "author": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "standard",
     "lint": "standard",
-    "prepare": "husky install"
-  },
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250610.0",
-    "@types/node": "^24.0.0",
-    "husky": "^8.0.1",
-    "standard": "^17.0.0"
+    "prepare": "husky install",
+    "build": "tsc && copyfiles -u 1 \"src/worker-templates/**/*\" dist"
   },
   "dependencies": {
-    "undici": "^6.7.0",
+    "undici": "^7.10.0",
     "xmlbuilder": "^15.1.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250613.0",
+    "@types/node": "^24.0.1",
+    "copyfiles": "^2.4.1",
+    "husky": "^8.0.3",
+    "standard": "^17.1.2",
+    "typescript": "^5.8.3"
   }
 }

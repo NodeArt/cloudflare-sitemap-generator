@@ -3,8 +3,8 @@ import { promises as fs } from "fs";
 
 import xmlBuilder from "xmlbuilder";
 
-import { useCf } from "./cf";
 import { useRequest, type ProxyConfig } from "./request";
+import { useCf, type CfAuthConfig } from "./cf";
 import { useLocalesApi } from "./locales-apis";
 import { usePagesApi } from "./pages-apis";
 
@@ -53,7 +53,7 @@ type WorkerConfig<
 > = {
   name: string;
   accountId: string;
-  authToken: string;
+  auth: CfAuthConfig;
 } & (BaseUrlMode | ModulesMode extends Loose
   ? { config?: BaseConfig<BaseUrlMode, ModulesMode> }
   : { config: BaseConfig<BaseUrlMode, ModulesMode> });
@@ -78,7 +78,7 @@ type Module = {
 type Worker = {
   name: string;
   accountId: string;
-  authToken: string;
+  auth: CfAuthConfig;
   proxy?: ProxyConfig;
   modules: Module[];
 };
@@ -100,12 +100,13 @@ const aggregateConfigIntoWorkers = (config: Config): Worker[] =>
         modules: worker.config?.modules ?? config.modules ?? [],
       };
 
-      if (workerConfig.baseUrl === undefined) throw "Missing baseUrl";
+      if (workerConfig.baseUrl === undefined)
+        throw new Error("Missing baseUrl");
 
       return {
         name: worker.name!,
         accountId: worker.accountId!,
-        authToken: worker.authToken!,
+        auth: worker.auth!,
         proxy: workerConfig.proxy,
         modules: workerConfig.modules!.map((module) => ({
           name: module.name!,
@@ -263,8 +264,9 @@ const getWorkerCode = async (sitemaps: Sitemap[], sitemapIndex: string) => {
     responses[`/${name}.xml`] = xml;
   });
 
-  const WORKER_TEMPLATE_PATH = path.join(__dirname, "worker-template.ts");
-  const template = await fs.readFile(WORKER_TEMPLATE_PATH, "utf8");
+  const WORKER_TEMPLATE_PATH = "worker-templates/sitemaps-worker.js";
+  const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH);
+  const template = await fs.readFile(templateFullPath, "utf8");
 
   const code = template.replace(
     "{}; // RESPONSES",
@@ -289,11 +291,58 @@ const updateWorker = async (worker: Worker) => {
   console.log("Updating worker with code", worker.name, workerCode);
 
   const { request } = useRequest(worker.proxy ?? null);
-  const { uploadWorkerScript } = useCf({ token: worker.authToken }, request);
-  await uploadWorkerScript(worker.accountId, worker.name, workerCode);
+  const { uploadWorkerScript } = useCf(worker.auth, request);
+  await uploadWorkerScript(worker.accountId, worker.name, workerCode, false);
 };
 
 export const updateSitemap = async (config: Config) => {
   const workers = aggregateConfigIntoWorkers(config);
   for (const worker of workers) await updateWorker(worker);
+};
+
+export const updateWorkers = async (config: {
+  proxy?: ProxyConfig;
+
+  response?: {
+    contentType: string;
+    content: string;
+  };
+
+  workers: {
+    name: string;
+    accountId: string;
+    auth: CfAuthConfig;
+    response?: {
+      contentType: string;
+      content: string;
+    };
+  }[];
+}) => {
+  const { request } = useRequest(config.proxy);
+
+  const workers = config.workers.map((worker) => {
+    const response = config.response ?? worker.response ?? null;
+
+    if (response === null)
+      throw new Error(`Response is NOT defined for worker ${worker.name}`);
+
+    return { ...worker, response };
+  });
+
+  for (const worker of workers) {
+    console.log("Started updating worker", worker.name);
+
+    const WORKER_TEMPLATE_PATH = "worker-templates/single-file-worker.js";
+    const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH);
+    const template = await fs.readFile(templateFullPath, "utf8");
+
+    const code = template
+      .replace("$_CONTENT_TYPE_$", worker.response.contentType)
+      .replace("$_CONTENT_$", worker.response.content);
+
+    console.log("Updating worker with code", worker.name, code);
+
+    const { uploadWorkerScript } = useCf(worker.auth, request);
+    await uploadWorkerScript(worker.accountId, worker.name, code, false);
+  }
 };

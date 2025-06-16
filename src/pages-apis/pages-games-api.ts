@@ -48,7 +48,9 @@ const fetchGamesPages = async (url: string, request: Fetcher, page = 1) => {
 
   if (!ok) {
     const res = await body.text();
-    throw `Games Pages API responded with NOT OK: ${status} (page: ${page}) ${res}`;
+    throw new Error(
+      `Games Pages API responded with NOT OK: ${status} (page: ${page}) ${res}`
+    );
   }
 
   const res = await body.json();
@@ -121,7 +123,7 @@ export const getPagesFromGamesApi = async (
     pages: paths.map((path) => {
       const alternates: { path: string; lang: string }[] = [];
       for (const otherLoc of pathsByLocales) {
-        // if (otherLoc.locale === locale) continue;
+        if (otherLoc.locale === locale) continue;
         if (otherLoc.paths.includes(path))
           alternates.push({ lang: otherLoc.locale, path });
       }

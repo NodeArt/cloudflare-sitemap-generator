@@ -1,31 +1,31 @@
-import { type Fetcher } from "./request";
+import { FormData } from "undici";
+
+import type { Fetcher } from "./request";
 
 const CLOUDFLARE_API_URL = "https://api.cloudflare.com/client/v4/";
 
 export type TokenAuthConfig = { token: string };
 export type GlobalKeyAuthConfig = { email: string; key: string };
-export type AuthConfig = TokenAuthConfig | GlobalKeyAuthConfig;
+export type CfAuthConfig = TokenAuthConfig | GlobalKeyAuthConfig;
 
-export const useCf = (auth: AuthConfig, request: Fetcher) => {
-  const getAuthHeaders = (config: AuthConfig) => {
-    const token = (config as TokenAuthConfig).token;
+export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
+  type AuthHeaders =
+    | { Authorization: string }
+    | { "X-Auth-Email": string; "X-Auth-Key": string };
 
-    if (token !== undefined)
-      return { Authorization: `Bearer ${token}` } as { Authorization: string };
-
-    const email = (config as GlobalKeyAuthConfig).email;
-    const key = (config as GlobalKeyAuthConfig).key;
-
-    if (email !== undefined && key !== undefined)
+  const getAuthHeaders = (config: CfAuthConfig): AuthHeaders => {
+    if ("token" in config)
       return {
-        "X-Auth-Email": email,
-        "X-Auth-Key": key,
-      } as {
-        "X-Auth-Email": string;
-        "X-Auth-Key": string;
+        Authorization: `Bearer ${config.token}`,
       };
 
-    throw "Invalid CF auth config";
+    if ("email" in config && "key" in config)
+      return {
+        "X-Auth-Email": config.email,
+        "X-Auth-Key": config.key,
+      };
+
+    throw new Error("Invalid CF auth config");
   };
 
   const authHeaders = getAuthHeaders(auth);
@@ -34,20 +34,36 @@ export const useCf = (auth: AuthConfig, request: Fetcher) => {
     uploadWorkerScript: async (
       accountId: string,
       name: string,
-      code: string
+      code: string,
+      moduleSyntax = true
     ) => {
+      const file = new File([code], "worker.js", { type: "text/javascript" });
+
+      const data = new FormData();
+
+      data.append("worker.js", file);
+      data.append(
+        "metadata",
+        JSON.stringify({
+          ...(moduleSyntax
+            ? { main_module: "worker.js" }
+            : { body_part: "worker.js" }),
+          compatibility_date: "2025-01-01",
+        })
+      );
+
       const url =
         CLOUDFLARE_API_URL + `accounts/${accountId}/workers/scripts/${name}`;
 
       const { ok, status, body } = await request(url, {
         method: "PUT",
-        headers: { "Content-Type": "application/javascript", ...authHeaders },
-        body: code,
+        headers: { ...authHeaders },
+        body: data,
       });
 
       if (!ok) {
         const res = await body.text();
-        throw `Could not update worker script: ${status}, ${res}`;
+        throw new Error(`Could not update worker script: ${status}, ${res}`);
       }
     },
   };

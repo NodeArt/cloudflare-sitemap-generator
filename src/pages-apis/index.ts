@@ -1,7 +1,8 @@
-import { Fetcher } from "../request";
-import { ApiType, Filter, Locale } from "../utils";
 import { getPagesFromGamesApi } from "./pages-games-api";
 import { getPagesFromSsApi } from "./pages-ss-api";
+
+import type { Fetcher } from "../request";
+import type { ApiType, Filter, Locale } from "../utils";
 
 const getApiFetcher = (type: ApiType) => {
   switch (type) {
@@ -12,7 +13,7 @@ const getApiFetcher = (type: ApiType) => {
       return getPagesFromGamesApi;
 
     default:
-      throw "Unsupported pages-list API type";
+      throw new Error("Unsupported pages-list API type");
   }
 };
 

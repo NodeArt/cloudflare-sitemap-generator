@@ -1,5 +1,7 @@
-import { Fetcher } from "../request";
-import { Filter, Locale, retry } from "../utils";
+import { retry } from "../utils";
+
+import type { Fetcher } from "../request";
+import type { Filter, Locale } from "../utils";
 
 const MAX_RETRY_COUNT = 5;
 
@@ -20,7 +22,7 @@ const fetchSsLocales = async (url: string, request: Fetcher) => {
     },
   });
 
-  if (!ok) throw `SS Locales API responded with NOT OK: ${status}`;
+  if (!ok) throw new Error(`SS Locales API responded with NOT OK: ${status}`);
 
   const res = await body.json();
 

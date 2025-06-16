@@ -24,7 +24,7 @@ const fetchSsPages = async (url: string, request: Fetcher) => {
     },
   });
 
-  if (!ok) throw `SS Pages API responded with NOT OK: ${status}`;
+  if (!ok) throw new Error(`SS Pages API responded with NOT OK: ${status}`);
 
   const res = await body.json();
 
@@ -82,7 +82,9 @@ const fetchSSPageDetails = async (
 
   if (!ok) {
     const res = await body.text();
-    throw `Could NOT get '${pageURL}' page details: ${status}, ${res}`;
+    throw new Error(
+      `Could NOT get '${pageURL}' page details: ${status}, ${res}`
+    );
   }
 
   const res = await body.json();
@@ -155,7 +157,7 @@ export const getPagesFromSsApi = async (
     pages: paths.map((path) => {
       const alternates: { path: string; lang: string }[] = [];
       for (const otherLoc of pathsByLocales) {
-        // if (otherLoc.locale === locale) continue;
+        if (otherLoc.locale === locale) continue;
         if (otherLoc.paths.includes(path))
           alternates.push({ lang: otherLoc.locale, path });
       }
