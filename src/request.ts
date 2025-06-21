@@ -1,76 +1,86 @@
-import { fetch, request, ProxyAgent, FormData } from "undici";
+import {request, ProxyAgent, FormData, getGlobalDispatcher, interceptors, RetryHandler} from "undici";
 
 export type ProxyConfig = {
-  url: string;
-  username: string;
-  password: string;
+    url: string;
+    username: string;
+    password: string;
 };
 
 export type HttpMethod =
-  | "GET"
-  | "HEAD"
-  | "POST"
-  | "PUT"
-  | "DELETE"
-  | "CONNECT"
-  | "OPTIONS"
-  | "TRACE"
-  | "PATCH";
+    | "GET"
+    | "HEAD"
+    | "POST"
+    | "PUT"
+    | "DELETE"
+    | "CONNECT"
+    | "OPTIONS"
+    | "TRACE"
+    | "PATCH";
 
 export type HttpOptions = {
-  method?: HttpMethod;
-  headers?: Record<string, string>;
-  body?: string | FormData;
+    method?: HttpMethod;
+    headers?: Record<string, string>;
+    body?: string | FormData;
 };
 
 export type HttpResponse = {
-  ok: boolean;
-  status: number;
-  body: {
-    text(): Promise<string>;
-    json(): Promise<any>;
-  };
+    ok: boolean;
+    status: number;
+    body: {
+        text(): Promise<string>;
+        json(): Promise<any>;
+    };
 };
 
 export type Fetcher = (
-  input: string | URL,
-  init?: HttpOptions
+    input: string | URL,
+    init?: HttpOptions
 ) => Promise<HttpResponse>;
 
+
+const retryOptions: RetryHandler.RetryOptions = {
+    maxRetries: 5, // Maximum number of retry attempts
+    minTimeout: 1000, // Minimum time to wait before retrying (1 second)
+    timeoutFactor: 2, // Factor by which the timeout increases for each retry (exponential backoff)
+};
+
 export const useRequest = (
-  proxy: ProxyConfig | null = null
+    proxy: ProxyConfig | null = null
 ): { request: Fetcher } => {
-  if (proxy === null)
+    let dispatcher = getGlobalDispatcher();
+    if (proxy) {
+        const agent = new ProxyAgent({
+            uri: proxy.url,
+            token: `Basic ${Buffer.from(`${proxy.username}:${proxy.password}`).toString('base64')}`,
+            headers: {"proxy-connection": "keep-alive"},
+            connections: 5,
+        });
+        dispatcher = agent
+    }
+
+     dispatcher = dispatcher
+        .compose([
+                interceptors.dns({
+                    maxTTL: 60 * 1000,
+                    maxItems: 100,
+                }),
+                interceptors.redirect({
+                    maxRedirections: 0,
+                }),
+                interceptors.retry(retryOptions)
+            ]
+        )
+
+
     return {
-      request: async (input, init = {}) =>
-        await fetch(input, init).then((res) => {
-          return {
-            ok: res.ok,
-            status: res.status,
-            body: {
-              json: () => res.json(),
-              text: () => res.text(),
-            },
-          };
-        }),
+        request: (input, init = {}) =>
+            request(input, {dispatcher, ...init}).then((res) => ({
+                ok: 200 <= res.statusCode && res.statusCode < 300,
+                status: res.statusCode,
+                body: {
+                    json: () => res.body.json(),
+                    text: () => res.body.text(),
+                },
+            })),
     };
-
-  const agent = new ProxyAgent({
-    uri: proxy.url,
-    auth: Buffer.from(`${proxy.username}:${proxy.password}`).toString("base64"),
-    headers: { "proxy-connection": "keep-alive" },
-    connections: 5,
-  });
-
-  return {
-    request: async (input, init = {}) =>
-      await request(input, { dispatcher: agent, ...init }).then((res) => ({
-        ok: 200 <= res.statusCode && res.statusCode < 300,
-        status: res.statusCode,
-        body: {
-          json: () => res.body.json(),
-          text: () => res.body.text(),
-        },
-      })),
-  };
 };
