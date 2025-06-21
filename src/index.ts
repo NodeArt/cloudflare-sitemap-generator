@@ -1,248 +1,248 @@
-import path from "path";
-import { promises as fs } from "fs";
+import path from 'path'
+import { promises as fs } from 'fs'
 
-import xmlBuilder from "xmlbuilder";
+import xmlBuilder from 'xmlbuilder'
 
-import { useRequest, type ProxyConfig } from "./request";
-import { useCf, type CfAuthConfig } from "./cf";
-import { useLocalesApi } from "./locales-apis";
-import { usePagesApi } from "./pages-apis";
+import { useRequest, type ProxyConfig } from './request'
+import { useCf, type CfAuthConfig } from './cf'
+import { useLocalesApi } from './locales-apis'
+import { usePagesApi } from './pages-apis'
 
-import type { ApiType, Filter, Locale, Page, Sitemap } from "./utils";
+import type { ApiType, Filter, Locale, Page, Sitemap } from './utils'
 
-type ApiConfig = {
-  type: ApiType;
-  url: string;
-};
+interface ApiConfig {
+  type: ApiType
+  url: string
+}
 
-type FilterConfig = {
-  filter?: Filter;
-};
+interface FilterConfig {
+  filter?: Filter
+}
 
-type ReplaceConfig = {
-  replace?: { pattern: string; value: string }[];
-};
+interface ReplaceConfig {
+  replace?: Array<{ pattern: string, value: string }>
+}
 
 type ModuleConfig = {
-  name: string;
-  localesListApi: ApiConfig;
-  pagesListApi: ApiConfig;
-  proxy?: ProxyConfig;
-  forceSplitByLocale?: boolean;
+  name: string
+  localesListApi: ApiConfig
+  pagesListApi: ApiConfig
+  proxy?: ProxyConfig
+  forceSplitByLocale?: boolean
 } & FilterConfig &
-  ReplaceConfig;
+ReplaceConfig
 
-type Strict = "strict";
-type Loose = "loose";
+type Strict = 'strict'
+type Loose = 'loose'
 
 type BaseConfig<
   BaseUrlMode extends Strict | Loose = Strict,
   ModulesMode extends Strict | Loose = Strict
 > = {
-  proxy?: ProxyConfig;
+  proxy?: ProxyConfig
 } & FilterConfig &
-  ReplaceConfig &
-  (BaseUrlMode extends Strict ? { baseUrl: string } : { baseUrl?: string }) &
-  (ModulesMode extends Strict
-    ? { modules: ModuleConfig[] }
-    : { modules?: ModuleConfig[] });
+ReplaceConfig &
+(BaseUrlMode extends Strict ? { baseUrl: string } : { baseUrl?: string }) &
+(ModulesMode extends Strict
+  ? { modules: ModuleConfig[] }
+  : { modules?: ModuleConfig[] })
 
 type WorkerConfig<
   BaseUrlMode extends Strict | Loose = Loose,
   ModulesMode extends Strict | Loose = Loose
 > = {
-  name: string;
-  accountId: string;
-  auth: CfAuthConfig;
+  name: string
+  accountId: string
+  auth: CfAuthConfig
 } & (BaseUrlMode | ModulesMode extends Loose
   ? { config?: BaseConfig<BaseUrlMode, ModulesMode> }
-  : { config: BaseConfig<BaseUrlMode, ModulesMode> });
+  : { config: BaseConfig<BaseUrlMode, ModulesMode> })
 
 export type Config =
-  | (BaseConfig<Strict, Strict> & { workers: WorkerConfig<Loose, Loose>[] })
-  | (BaseConfig<Loose, Strict> & { workers: WorkerConfig<Strict, Loose>[] })
-  | (BaseConfig<Strict, Loose> & { workers: WorkerConfig<Loose, Strict>[] })
-  | (BaseConfig<Loose, Loose> & { workers: WorkerConfig<Strict, Strict>[] });
+  | (BaseConfig<Strict, Strict> & { workers: Array<WorkerConfig<Loose, Loose>> })
+  | (BaseConfig<Loose, Strict> & { workers: Array<WorkerConfig<Strict, Loose>> })
+  | (BaseConfig<Strict, Loose> & { workers: Array<WorkerConfig<Loose, Strict>> })
+  | (BaseConfig<Loose, Loose> & { workers: Array<WorkerConfig<Strict, Strict>> })
 
-type Module = {
-  name: string;
-  localesListApi: ApiConfig;
-  pagesListApi: ApiConfig;
-  forceSplitByLocale: boolean;
-  filter: Filter;
-  replace: { pattern: string; value: string }[];
-  proxy?: ProxyConfig;
-  baseUrl: string;
-};
+interface Module {
+  name: string
+  localesListApi: ApiConfig
+  pagesListApi: ApiConfig
+  forceSplitByLocale: boolean
+  filter: Filter
+  replace: Array<{ pattern: string, value: string }>
+  proxy?: ProxyConfig
+  baseUrl: string
+}
 
-type Worker = {
-  name: string;
-  accountId: string;
-  auth: CfAuthConfig;
-  proxy?: ProxyConfig;
-  modules: Module[];
-};
+interface Worker {
+  name: string
+  accountId: string
+  auth: CfAuthConfig
+  proxy?: ProxyConfig
+  modules: Module[]
+}
 
 const aggregateConfigIntoWorkers = (config: Config): Worker[] =>
   config.workers.map(
     (
       worker:
-        | WorkerConfig<Loose, Loose>
-        | WorkerConfig<Strict, Loose>
-        | WorkerConfig<Loose, Strict>
-        | WorkerConfig<Strict, Strict>
+      | WorkerConfig<Loose, Loose>
+      | WorkerConfig<Strict, Loose>
+      | WorkerConfig<Loose, Strict>
+      | WorkerConfig<Strict, Strict>
     ) => {
       const workerConfig = {
         baseUrl: worker.config?.baseUrl ?? config.baseUrl,
         filter: worker.config?.filter ?? config.filter ?? {},
         replace: worker.config?.replace ?? config.replace ?? [],
         proxy: worker.config?.proxy ?? config.proxy,
-        modules: worker.config?.modules ?? config.modules ?? [],
-      };
+        modules: worker.config?.modules ?? config.modules ?? []
+      }
 
-      if (workerConfig.baseUrl === undefined)
-        throw new Error("Missing baseUrl");
+      if (workerConfig.baseUrl === undefined) { throw new Error('Missing baseUrl') }
 
       return {
-        name: worker.name!,
-        accountId: worker.accountId!,
-        auth: worker.auth!,
+        name: worker.name,
+        accountId: worker.accountId,
+        auth: worker.auth,
         proxy: workerConfig.proxy,
-        modules: workerConfig.modules!.map((module) => ({
-          name: module.name!,
-          localesListApi: module.localesListApi!,
-          pagesListApi: module.pagesListApi!,
+        modules: workerConfig.modules.map((module) => ({
+          name: module.name,
+          localesListApi: module.localesListApi,
+          pagesListApi: module.pagesListApi,
           forceSplitByLocale: module.forceSplitByLocale ?? false,
-          filter: module.filter ?? workerConfig.filter!,
-          replace: module.replace ?? workerConfig.replace!,
+          filter: module.filter ?? workerConfig.filter,
+          replace: module.replace ?? workerConfig.replace,
           proxy: module.proxy ?? workerConfig.proxy,
-          baseUrl: workerConfig.baseUrl!,
-        })),
-      };
+          baseUrl: workerConfig.baseUrl!
+        }))
+      }
     }
-  );
+  )
 
 const generateUrl = (
   baseUrl: string,
   pagePath: string,
   locale: string
 ): string => {
-  const base = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-  const localeSegment = locale === "en" ? "" : `${locale}/`;
-  const pathSegment = pagePath.startsWith("/")
+  const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
+  const localeSegment = locale === 'en' ? '' : `${locale}/`
+  const pathSegment = pagePath.startsWith('/')
     ? pagePath.substring(1)
-    : pagePath;
+    : pagePath
 
-  return new URL(`${localeSegment}${pathSegment}`, base).href;
-};
+  return new URL(`${localeSegment}${pathSegment}`, base).href
+}
 
 const generateSitemap = (baseURL: string, pages: Page[]) => {
   const xml = xmlBuilder
-    .create("urlset", { version: "1.0", encoding: "UTF-8" })
+    .create('urlset', { version: '1.0', encoding: 'UTF-8' })
     .att({
-      xmlns: "http://www.sitemaps.org/schemas/sitemap/0.9",
-      "xmlns:xhtml": "http://www.w3.org/1999/xhtml",
-    });
+      xmlns: 'http://www.sitemaps.org/schemas/sitemap/0.9',
+      'xmlns:xhtml': 'http://www.w3.org/1999/xhtml'
+    })
 
   for (const page of pages) {
-    const url = generateUrl(baseURL, page.path, page.lang);
+    const url = generateUrl(baseURL, page.path, page.lang)
 
-    const xUrl = xml.ele("url");
-    xUrl.ele("loc", url);
-    xUrl.ele("priority", page.priority.toFixed(1));
-    xUrl.ele("changefreq", page.freq);
+    const xUrl = xml.ele('url')
+    xUrl.ele('loc', url)
+    xUrl.ele('priority', page.priority.toFixed(1))
+    xUrl.ele('changefreq', page.freq)
 
     for (const alt of page.alternates) {
-      xUrl.ele("xhtml:link").att({
-        rel: "alternate",
+      xUrl.ele('xhtml:link').att({
+        rel: 'alternate',
         hreflang: alt.lang,
-        href: generateUrl(baseURL, alt.path, alt.lang),
-      });
+        href: generateUrl(baseURL, alt.path, alt.lang)
+      })
     }
   }
 
-  return xml.end({ pretty: true, indent: "  ", newline: "\n" });
-};
+  return xml.end({ pretty: true, indent: '  ', newline: '\n' })
+}
 
 const generateSitemapIndex = (sitemaps: Sitemap[]) => {
   const xml = xmlBuilder
-    .create("sitemapindex", { version: "1.0", encoding: "UTF-8" })
+    .create('sitemapindex', { version: '1.0', encoding: 'UTF-8' })
     .att({
-      xmlns: "http://www.sitemaps.org/schemas/sitemap/0.9",
-      "xmlns:xhtml": "http://www.w3.org/1999/xhtml",
-    });
+      xmlns: 'http://www.sitemaps.org/schemas/sitemap/0.9',
+      'xmlns:xhtml': 'http://www.w3.org/1999/xhtml'
+    })
 
   for (const sitemap of sitemaps) {
-    const xUrl = xml.ele("sitemap");
-    xUrl.ele("loc", `${sitemap.baseUrl}/${sitemap.name}.xml`);
+    const xUrl = xml.ele('sitemap')
+    xUrl.ele('loc', `${sitemap.baseUrl}/${sitemap.name}.xml`)
   }
 
-  return xml.end({ pretty: true, indent: "  ", newline: "\n" });
-};
+  return xml.end({ pretty: true, indent: '  ', newline: '\n' })
+}
 
 const getPages = async (
   module: Module
-): Promise<{ locale: Locale; pages: Page[] }[]> => {
-  console.log("Getting Pages for module", module.name);
+): Promise<Array<{ locale: Locale, pages: Page[] }>> => {
+  console.log('Getting Pages for module', module.name)
 
-  const { request } = useRequest(module.proxy);
+  const { request } = useRequest(module.proxy)
 
-  console.log("Getting Locales List...");
+  console.log('Getting Locales List...')
   const { getLocales } = useLocalesApi(
     module.localesListApi.type,
-    module.localesListApi.url.startsWith("/")
+    module.localesListApi.url.startsWith('/')
       ? `${module.baseUrl}${module.localesListApi.url}`
       : module.localesListApi.url,
     request
-  );
+  )
 
-  const locales = await getLocales(module.filter);
+  const locales = await getLocales(module.filter)
 
-  console.log("Getting Pages List...");
+  console.log('Getting Pages List...')
   const { getPages } = usePagesApi(
     module.pagesListApi.type,
-    module.pagesListApi.url.startsWith("/")
+    module.pagesListApi.url.startsWith('/')
       ? `${module.baseUrl}${module.pagesListApi.url}`
       : module.pagesListApi.url,
     request
-  );
+  )
 
-  const pages = await getPages(locales, module.filter);
+  const pages = await getPages(locales, module.filter)
 
-  return pages;
-};
+  return pages
+}
 
 const getSitemaps = async (module: Module): Promise<Sitemap[]> => {
-  console.log("Getting Sitemaps for module", module.name);
+  console.log('Getting Sitemaps for module', module.name)
 
-  const PAGINATION_LIMIT = 1000;
+  const PAGINATION_LIMIT = 1000
 
-  const pages = await getPages(module);
+  const pages = await getPages(module)
 
   const getSitemap = (name: string, pages: Page[]): Sitemap => {
     const xml = module.replace.reduce(
       (str, { pattern, value }) => str.replaceAll(pattern, value),
       generateSitemap(module.baseUrl, pages)
-    );
-    return { name, xml, baseUrl: module.baseUrl };
-  };
+    )
+    return { name, xml, baseUrl: module.baseUrl }
+  }
 
-  const totalPagesCount = pages.reduce((sum, loc) => sum + loc.pages.length, 0);
-  if (totalPagesCount < PAGINATION_LIMIT)
+  const totalPagesCount = pages.reduce((sum, loc) => sum + loc.pages.length, 0)
+  if (totalPagesCount < PAGINATION_LIMIT) {
     return [
       getSitemap(
         `sitemap-${module.name}`,
-        pages.reduce(
+        pages.reduce<Page[]>(
           (allPages, locale) => [...allPages, ...locale.pages],
-          [] as Page[]
+          []
         )
-      ),
-    ];
+      )
+    ]
+  }
 
-  const sitemaps: Sitemap[] = [];
+  const sitemaps: Sitemap[] = []
 
-  for (const loc of pages)
-    for (let i = 0; i * PAGINATION_LIMIT < loc.pages.length; ++i)
+  for (const loc of pages) {
+    for (let i = 0; i * PAGINATION_LIMIT < loc.pages.length; ++i) {
       sitemaps.push(
         getSitemap(
           loc.pages.length < PAGINATION_LIMIT
@@ -250,99 +250,99 @@ const getSitemaps = async (module: Module): Promise<Sitemap[]> => {
             : `sitemap-${module.name}-${loc.locale}-${i + 1}`,
           loc.pages.slice(i * PAGINATION_LIMIT, (i + 1) * PAGINATION_LIMIT)
         )
-      );
+      )
+    }
+  }
 
-  return sitemaps;
-};
+  return sitemaps
+}
 
 const getWorkerCode = async (sitemaps: Sitemap[], sitemapIndex: string) => {
   const responses: { [path: string]: string } = {
-    "/sitemap-index.xml": sitemapIndex,
-  };
+    '/sitemap-index.xml': sitemapIndex
+  }
 
   sitemaps.forEach(({ name, xml }) => {
-    responses[`/${name}.xml`] = xml;
-  });
+    responses[`/${name}.xml`] = xml
+  })
 
-  const WORKER_TEMPLATE_PATH = "worker-templates/sitemaps-worker.js";
-  const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH);
-  const template = await fs.readFile(templateFullPath, "utf8");
+  const WORKER_TEMPLATE_PATH = 'worker-templates/sitemaps-worker.js'
+  const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH)
+  const template = await fs.readFile(templateFullPath, 'utf8')
 
   const code = template.replace(
-    "{}; // RESPONSES",
-    JSON.stringify(responses) + ";"
-  );
+    '{}; // RESPONSES',
+    JSON.stringify(responses) + ';'
+  )
 
-  return code;
-};
+  return code
+}
 
 const updateWorker = async (worker: Worker) => {
-  console.log("Updating Worker", worker.name);
+  console.log('Updating Worker', worker.name)
 
-  const sitemaps: Sitemap[] = [];
+  const sitemaps: Sitemap[] = []
 
-  for (const module of worker.modules)
-    sitemaps.push(...(await getSitemaps(module)));
+  for (const module of worker.modules) { sitemaps.push(...(await getSitemaps(module))) }
 
-  const sitemapIndex = generateSitemapIndex(sitemaps);
+  const sitemapIndex = generateSitemapIndex(sitemaps)
 
-  const workerCode = await getWorkerCode(sitemaps, sitemapIndex);
+  const workerCode = await getWorkerCode(sitemaps, sitemapIndex)
 
-  console.log("Updating worker with code", worker.name, workerCode);
+  console.log('Updating worker with code', worker.name, workerCode)
 
-  const { request } = useRequest(worker.proxy ?? null);
-  const { uploadWorkerScript } = useCf(worker.auth, request);
-  await uploadWorkerScript(worker.accountId, worker.name, workerCode, false);
-};
+  const { request } = useRequest(worker.proxy ?? null)
+  const { uploadWorkerScript } = useCf(worker.auth, request)
+  await uploadWorkerScript(worker.accountId, worker.name, workerCode, false)
+}
 
 export const updateSitemap = async (config: Config) => {
-  const workers = aggregateConfigIntoWorkers(config);
-  for (const worker of workers) await updateWorker(worker);
-};
+  const workers = aggregateConfigIntoWorkers(config)
+  for (const worker of workers) await updateWorker(worker)
+}
 
 export const updateWorkers = async (config: {
-  proxy?: ProxyConfig;
+  proxy?: ProxyConfig
 
   response?: {
-    contentType: string;
-    content: string;
-  };
+    contentType: string
+    content: string
+  }
 
-  workers: {
-    name: string;
-    accountId: string;
-    auth: CfAuthConfig;
+  workers: Array<{
+    name: string
+    accountId: string
+    auth: CfAuthConfig
     response?: {
-      contentType: string;
-      content: string;
-    };
-  }[];
+      contentType: string
+      content: string
+    }
+  }>
 }) => {
-  const { request } = useRequest(config.proxy);
+  const { request } = useRequest(config.proxy)
 
   const workers = config.workers.map((worker) => {
-    const response = config.response ?? worker.response ?? null;
+    const response = config.response ?? worker.response ?? null
 
-    if (response === null)
-      throw new Error(`Response is NOT defined for worker ${worker.name}`);
+    if (response === null) { throw new Error(`Response is NOT defined for worker ${worker.name}`) }
 
-    return { ...worker, response };
-  });
+    return { ...worker, response }
+  })
 
   for (const worker of workers) {
-    console.log("Started updating worker", worker.name);
+    console.log('Started updating worker', worker.name)
 
-    const WORKER_TEMPLATE_PATH = "worker-templates/single-file-worker.js";
-    const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH);
-    const template = await fs.readFile(templateFullPath, "utf8");
+    const WORKER_TEMPLATE_PATH = 'worker-templates/single-file-worker.js'
+    const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH)
+    const template = await fs.readFile(templateFullPath, 'utf8')
 
     const code = template
-      .replace("$_CONTENT_TYPE_$", worker.response.contentType)
-      .replace("$_CONTENT_$", worker.response.content);
+      .replace('$_CONTENT_TYPE_$', worker.response.contentType)
+      .replace('$_CONTENT_$', worker.response.content)
 
-    console.log("Updating worker with code", worker.name, code);
+    console.log('Updating worker with code', worker.name, code)
 
-    const { uploadWorkerScript } = useCf(worker.auth, request);
-    await uploadWorkerScript(worker.accountId, worker.name, code, false);
+    const { uploadWorkerScript } = useCf(worker.auth, request)
+    await uploadWorkerScript(worker.accountId, worker.name, code, false)
   }
-};
+}

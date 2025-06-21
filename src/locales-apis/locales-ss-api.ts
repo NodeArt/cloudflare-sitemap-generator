@@ -1,53 +1,51 @@
-import { retry } from "../utils";
+import { retry } from '../utils'
 
-import type { Fetcher } from "../request";
-import type { Filter, Locale } from "../utils";
+import type { Fetcher } from '../request'
+import type { Filter, Locale } from '../utils'
 
-const MAX_RETRY_COUNT = 5;
+const MAX_RETRY_COUNT = 5
 
 interface LocaleInfo {
-  code: string;
-  name: string;
-  name_in_locale: string;
-  default: boolean;
+  code: string
+  name: string
+  name_in_locale: string
+  default: boolean
 }
 
 const fetchSsLocales = async (url: string, request: Fetcher) => {
   const { ok, status, body } = await request(url, {
-    method: "GET",
+    method: 'GET',
     headers: {
-      "user-agent": "sitemap-generator-ss",
-      "content-type": "application/json",
-      Accept: "application/vnd.softswiss.v1+json",
-    },
-  });
+      'user-agent': 'sitemap-generator-ss',
+      'content-type': 'application/json',
+      Accept: 'application/vnd.softswiss.v1+json'
+    }
+  })
 
-  if (!ok) throw new Error(`SS Locales API responded with NOT OK: ${status}`);
+  if (!ok) throw new Error(`SS Locales API responded with NOT OK: ${status}`)
 
-  const res = await body.json();
+  const res = await body.json()
 
-  return res as LocaleInfo[];
-};
+  return res as LocaleInfo[]
+}
 
 export const getLocalesFromSsApi = async (
   url: string,
   request: Fetcher,
   filter: Filter
 ): Promise<Locale[]> => {
-  console.log("Getting Locales from SS API...");
+  console.log('Getting Locales from SS API...')
 
   const locales = await retry(
-    () => fetchSsLocales(url, request),
+    async () => await fetchSsLocales(url, request),
     MAX_RETRY_COUNT
-  );
+  )
 
-  const codes = locales.map((locale) => locale.code);
+  const codes = locales.map((locale) => locale.code)
 
-  if (filter.include?.locales)
-    return codes.filter((code) => filter.include?.locales?.includes(code));
+  if (filter.include?.locales) { return codes.filter((code) => filter.include?.locales?.includes(code)) }
 
-  if (filter.exclude?.locales)
-    return codes.filter((code) => !filter.exclude?.locales?.includes(code));
+  if (filter.exclude?.locales) { return codes.filter((code) => !filter.exclude?.locales?.includes(code)) }
 
-  return codes;
-};
+  return codes
+}
