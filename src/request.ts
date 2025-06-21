@@ -48,10 +48,10 @@ export const useRequest = (
     proxy: ProxyConfig | null = null
 ): { request: Fetcher } => {
     let dispatcher = getGlobalDispatcher();
-    if (proxy) {
+    if (proxy && proxy.username && proxy.password) {
         const agent = new ProxyAgent({
             uri: proxy.url,
-            token: `Basic ${Buffer.from(`${proxy.username}:${proxy.password}`).toString('base64')}`,
+            token: `Basic ${Buffer.from(`${proxy.username}:${proxy.password}`).toString("base64")}`,
             headers: {"proxy-connection": "keep-alive"},
             connections: 5,
         });
