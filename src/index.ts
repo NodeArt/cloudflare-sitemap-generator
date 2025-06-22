@@ -3,12 +3,12 @@ import { promises as fs } from 'fs'
 
 import xmlBuilder from 'xmlbuilder'
 
-import { useRequest, type ProxyConfig } from './request'
-import { useCf, type CfAuthConfig } from './cf'
-import { useLocalesApi } from './locales-apis'
-import { usePagesApi } from './pages-apis'
+import { useRequest, type ProxyConfig } from './request.js'
+import { useCf, type CfAuthConfig } from './cf.js'
+import { useLocalesApi } from './locales-apis/index.js'
+import { usePagesApi } from './pages-apis/index.js'
 
-import type { ApiType, Filter, Locale, Page, Sitemap } from './utils'
+import type { ApiType, Filter, Locale, Page, Sitemap } from './utils.js'
 
 interface ApiConfig {
   type: ApiType

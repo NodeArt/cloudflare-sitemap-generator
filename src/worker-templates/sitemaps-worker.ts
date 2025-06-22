@@ -1,5 +1,6 @@
+import { ExportedHandler } from '@cloudflare/workers-types'
 export default {
-  async fetch (request): Promise<Response> {
+  async fetch (request: Request): Promise<Response> {
     const url = new URL(request.url)
     const responses: { [path: string]: string } = {} // RESPONSES
     // if no sitemap file exists - pass to origin

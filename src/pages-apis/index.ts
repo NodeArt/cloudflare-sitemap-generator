@@ -1,8 +1,8 @@
-import { getPagesFromGamesApi } from './pages-games-api'
-import { getPagesFromSsApi } from './pages-ss-api'
+import { getPagesFromGamesApi } from './pages-games-api.js'
+import { getPagesFromSsApi } from './pages-ss-api.js'
 
-import type { Fetcher } from '../request'
-import type { ApiType, Filter, Locale } from '../utils'
+import type { Fetcher } from '../request.js'
+import type { ApiType, Filter, Locale } from '../utils.js'
 
 const getApiFetcher = (type: ApiType) => {
   switch (type) {

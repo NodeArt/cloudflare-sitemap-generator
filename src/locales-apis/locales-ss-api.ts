@@ -1,7 +1,7 @@
-import { retry } from '../utils'
+import { retry } from '../utils.js'
 
-import type { Fetcher } from '../request'
-import type { Filter, Locale } from '../utils'
+import type { Fetcher } from '../request.js'
+import type { Filter, Locale } from '../utils.js'
 
 const MAX_RETRY_COUNT = 5
 
@@ -43,9 +43,9 @@ export const getLocalesFromSsApi = async (
 
   const codes = locales.map((locale) => locale.code)
 
-  if (filter.include?.locales) { return codes.filter((code) => filter.include?.locales?.includes(code)) }
+  if ((filter.include?.locales) != null) { return codes.filter((code) => filter.include?.locales?.includes(code)) }
 
-  if (filter.exclude?.locales) { return codes.filter((code) => !filter.exclude?.locales?.includes(code)) }
+  if ((filter.exclude?.locales) != null) { return codes.filter((code) => !filter.exclude?.locales?.includes(code)) }
 
   return codes
 }
