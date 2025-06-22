@@ -38,9 +38,9 @@ export type Fetcher = (
 ) => Promise<HttpResponse>
 
 const retryOptions: RetryHandler.RetryOptions = {
-  maxRetries: 5, // Maximum number of retry attempts
+  maxRetries: 10, // Maximum number of retry attempts
   minTimeout: 1000, // Minimum time to wait before retrying (1 second)
-  timeoutFactor: 2 // Factor by which the timeout increases for each retry (exponential backoff)
+  timeoutFactor: 3 // Factor by which the timeout increases for each retry (exponential backoff)
 }
 
 export const useRequest = (
