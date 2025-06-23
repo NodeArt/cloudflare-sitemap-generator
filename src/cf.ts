@@ -1,6 +1,6 @@
 import { FormData } from "undici";
 
-import type { Fetcher } from "./request";
+import type { Fetcher } from "./request.js";
 
 const CLOUDFLARE_API_URL = "https://api.cloudflare.com/client/v4/";
 

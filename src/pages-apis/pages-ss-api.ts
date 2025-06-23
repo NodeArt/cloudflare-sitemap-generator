@@ -1,7 +1,13 @@
-import { retry } from "../utils";
+import { retry } from "../utils.js";
 
-import type { Fetcher } from "../request";
-import type { Locale, Page, Priority, ChangeFrequency, Filter } from "../utils";
+import type { Fetcher } from "../request.js";
+import type {
+  Locale,
+  Page,
+  Priority,
+  ChangeFrequency,
+  Filter,
+} from "../utils.js";
 
 const MAX_RETRY_COUNT = 5;
 
