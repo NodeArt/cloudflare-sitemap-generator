@@ -114,7 +114,7 @@ export const getPagesFromGamesApi = async (
 
   const allPaths = pagesRaw
     .filter(filterPage)
-    .map((page) => `games/${page.seo_title}`);
+    .map((page) => `game/${page.seo_title}`);
 
   const pathsByLocales = locales.map((locale) => ({ locale, paths: allPaths }));
 
