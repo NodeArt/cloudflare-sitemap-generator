@@ -37,7 +37,11 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
       code: string,
       moduleSyntax = true
     ) => {
-      const file = new File([code], "worker.js", { type: "text/javascript" });
+      const file = new File([code], "worker.js", {
+        type: moduleSyntax
+          ? "application/javascript+module"
+          : "application/javascript",
+      });
 
       const data = new FormData();
 
