@@ -21,7 +21,7 @@ interface PageInfo {
 }
 
 const fetchSsPages = async (url: string, request: Fetcher) => {
-  const { ok, status, body } = await request(url, {
+  const { statusCode: status, body } = await request(url, {
     method: "GET",
     headers: {
       "user-agent": "sitemap-generator-ss",
@@ -30,7 +30,8 @@ const fetchSsPages = async (url: string, request: Fetcher) => {
     },
   });
 
-  if (!ok) throw new Error(`SS Pages API responded with NOT OK: ${status}`);
+  if (status < 200 || 300 > status)
+    throw new Error(`SS Pages API responded with NOT OK: ${status}`);
 
   const res = await body.json();
 
@@ -73,7 +74,7 @@ const fetchSSPageDetails = async (
 ) => {
   const pageURL = `${url}/${pagePath}?locale=${localeCode}`;
 
-  const { ok, status, body } = await request(pageURL, {
+  const { statusCode: status, body } = await request(pageURL, {
     method: "GET",
     headers: {
       "user-agent": "sitemap-generator-ss",
@@ -86,7 +87,7 @@ const fetchSSPageDetails = async (
 
   if (status === 404) return null;
 
-  if (!ok) {
+  if (status < 200 || 300 > status) {
     const res = await body.text();
     throw new Error(
       `Could NOT get '${pageURL}' page details: ${status}, ${res}`

@@ -68,7 +68,7 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
         new File([code], "main.js", { type: "application/javascript+module" })
       );
 
-      const { status, body } = await request(
+      const { statusCode: status, body } = await request(
         `${CLOUDFLARE_API_URL}/accounts/${accountId}/workers/scripts/${name}`,
         {
           method: "PUT",
@@ -77,7 +77,7 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
         }
       );
 
-      const response = await body.json().catch((err) => {
+      const response: any = await body.json().catch((err) => {
         console.error(err);
         return undefined;
       });

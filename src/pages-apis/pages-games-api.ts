@@ -25,7 +25,7 @@ interface PageInfo {
 const fetchGamesPages = async (url: string, request: Fetcher, page = 1) => {
   const PAGE_SIZE = 100;
 
-  const { ok, status, body } = await request(url, {
+  const { statusCode: status, body } = await request(url, {
     method: "POST",
     headers: {
       "user-agent": "sitemap-generator-games",
@@ -46,7 +46,7 @@ const fetchGamesPages = async (url: string, request: Fetcher, page = 1) => {
     }),
   });
 
-  if (!ok) {
+  if (status < 200 || 300 > status) {
     const res = await body.text();
     throw new Error(
       `Games Pages API responded with NOT OK: ${status} (page: ${page}) ${res}`
