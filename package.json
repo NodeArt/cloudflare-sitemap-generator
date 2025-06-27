@@ -14,7 +14,7 @@
     "test": "ts-standard",
     "lint": "ts-standard",
     "prepare": "husky install",
-    "build": "tsc && copyfiles -u 1 \"src/worker-templates/**/*\" dist"
+    "build": "tsc"
   },
   "dependencies": {
     "undici": "^7.10.0",
