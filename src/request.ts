@@ -3,13 +3,13 @@ import {
   ProxyAgent,
   getGlobalDispatcher,
   interceptors,
-  RetryHandler,
+  RetryHandler
 } from 'undici'
 
-export type ProxyConfig = {
-  url: string;
-  username: string;
-  password: string;
+export interface ProxyConfig {
+  url: string
+  username: string
+  password: string
 }
 
 export type Fetcher = typeof request
@@ -17,7 +17,7 @@ export type Fetcher = typeof request
 const retryOptions: RetryHandler.RetryOptions = {
   maxRetries: 5, // Maximum number of retry attempts
   minTimeout: 1000, // Minimum time to wait before retrying (1 second)
-  timeoutFactor: 2, // Factor by which the timeout increases for each retry (exponential backoff)
+  timeoutFactor: 2 // Factor by which the timeout increases for each retry (exponential backoff)
 }
 
 export const useRequest = (
@@ -25,14 +25,14 @@ export const useRequest = (
 ): { request: typeof request } => {
   let dispatcher = getGlobalDispatcher()
 
-  if (proxy && proxy.username && proxy.password) {
+  if ((proxy != null) && proxy.username && proxy.password) {
     const agent = new ProxyAgent({
       uri: proxy.url,
       token: `Basic ${Buffer.from(
         `${proxy.username}:${proxy.password}`
       ).toString('base64')}`,
       headers: { 'proxy-connection': 'keep-alive' },
-      connections: 5,
+      connections: 5
     })
     dispatcher = agent
   }
@@ -40,13 +40,13 @@ export const useRequest = (
   dispatcher = dispatcher.compose([
     interceptors.dns({
       maxTTL: 60 * 1000,
-      maxItems: 100,
+      maxItems: 100
     }),
     interceptors.redirect({
-      maxRedirections: 0,
+      maxRedirections: 0
     }),
-    interceptors.retry(retryOptions),
+    interceptors.retry(retryOptions)
   ])
 
-  return { request: (input, init) => request(input, { dispatcher, ...init }) }
+  return { request: async (input, init) => await request(input, { dispatcher, ...init }) }
 }

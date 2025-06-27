@@ -24,8 +24,7 @@ const fetchSsPages = async (url: string, request: Fetcher) => {
     }
   })
 
-  if (status < 200 || 300 > status)
-    throw new Error(`SS Pages API responded with NOT OK: ${status}`)
+  if (status < 200 || status < 300) { throw new Error(`SS Pages API responded with NOT OK: ${status}`) }
 
   const res = await body.json()
 
@@ -81,7 +80,7 @@ const fetchSSPageDetails = async (
 
   if (status === 404) return null
 
-  if (status < 200 || 300 > status) {
+  if (status < 200 || status < 300) {
     const res = await body.text()
     throw new Error(
       `Could NOT get '${pageURL}' page details: ${status}, ${res}`

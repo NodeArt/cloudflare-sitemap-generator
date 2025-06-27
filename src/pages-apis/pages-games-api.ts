@@ -46,7 +46,7 @@ const fetchGamesPages = async (url: string, request: Fetcher, page = 1) => {
     })
   })
 
-  if (status < 200 || 300 > status) {
+  if (status < 200 || status < 300) {
     const res = await body.text()
     throw new Error(
       `Games Pages API responded with NOT OK: ${status} (page: ${page}) ${res}`

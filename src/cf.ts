@@ -38,8 +38,8 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
       name: string,
       code: string,
       bindings?: {
-        text?: { name: string; content: string }[];
-        json?: { name: string; content: any }[];
+        text?: Array<{ name: string, content: string }>
+        json?: Array<{ name: string, content: any }>
       }
     ) => {
       const data = new FormData()
@@ -51,14 +51,14 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
           ...(bindings?.text?.map((binding) => ({
             type: 'plain_text',
             name: binding.name,
-            text: binding.content,
+            text: binding.content
           })) ?? []),
           ...(bindings?.json?.map((binding) => ({
             type: 'json',
             name: binding.name,
-            json: binding.content,
-          })) ?? []),
-        ],
+            json: binding.content
+          })) ?? [])
+        ]
       }
 
       data.append(
@@ -75,7 +75,7 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
         {
           method: 'PUT',
           headers: { ...authHeaders },
-          body: data,
+          body: data
         }
       )
 
@@ -89,8 +89,7 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
 
       if (response?.success !== true) {
         console.log(response)
-        if (response?.errors?.length !== 0)
-          response.errors.forEach((err: string) => console.error(err))
+        if (response?.errors?.length !== 0) { response.errors.forEach((err: string) => console.error(err)) }
         throw new Error(`Could not update worker script: ${status}`)
       }
     }

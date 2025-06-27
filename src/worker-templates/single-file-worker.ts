@@ -1,5 +1,5 @@
 export default {
-  async fetch (req: Request): Promise<Response> {
+  async fetch (): Promise<Response> {
     return new Response('$_CONTENT_$', {
       headers: { 'content-type': '$_CONTENT_TYPE_$' }
     })

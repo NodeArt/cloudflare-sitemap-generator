@@ -288,15 +288,15 @@ const updateWorker = async (worker: Worker) => {
   sitemaps.push({
     name: 'sitemap-index',
     xml: generateSitemapIndex(sitemaps),
-    baseUrl: '',
+    baseUrl: ''
   })
 
   const getSitemapBindingName = (name: string) =>
-    `SITEMAP_${name.replaceAll("-", "_").toUpperCase()}`
+    `SITEMAP_${name.replaceAll('-', '_').toUpperCase()}`
 
   const sitemapsBindings = sitemaps.map((sitemap) => ({
     name: getSitemapBindingName(sitemap.name),
-    content: sitemap.xml,
+    content: sitemap.xml
   }))
 
   const sitemapsManifestBinding = {
@@ -304,9 +304,9 @@ const updateWorker = async (worker: Worker) => {
     content: Object.fromEntries(
       sitemaps.map((sitemap) => [
         `/${sitemap.name}.xml`,
-        getSitemapBindingName(sitemap.name),
+        getSitemapBindingName(sitemap.name)
       ])
-    ),
+    )
   }
 
   const bindings = { text: sitemapsBindings, json: [sitemapsManifestBinding] }
