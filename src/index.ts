@@ -257,27 +257,6 @@ const getSitemaps = async (module: Module): Promise<Sitemap[]> => {
   return sitemaps
 }
 
-const getWorkerCode = async (sitemaps: Sitemap[], sitemapIndex: string) => {
-  const responses: { [path: string]: string } = {
-    '/sitemap-index.xml': sitemapIndex
-  }
-
-  sitemaps.forEach(({ name, xml }) => {
-    responses[`/${name}.xml`] = xml
-  })
-
-  const WORKER_TEMPLATE_PATH = 'worker-templates/sitemaps-worker.js'
-  const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH)
-  const template = await fs.readFile(templateFullPath, 'utf8')
-
-  const code = template.replace(
-    '{}; // RESPONSES',
-    JSON.stringify(responses) + ';'
-  )
-
-  return code
-}
-
 const updateWorker = async (worker: Worker) => {
   console.log('Updating Worker', worker.name)
 

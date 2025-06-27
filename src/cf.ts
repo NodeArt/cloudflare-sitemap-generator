@@ -84,9 +84,6 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
         return undefined
       })
 
-      console.log(status)
-      console.log(response)
-
       if (response?.success !== true) {
         console.log(response)
         if (response?.errors?.length !== 0) { response.errors.forEach((err: string) => console.error(err)) }
