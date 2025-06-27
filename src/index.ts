@@ -312,7 +312,7 @@ const updateWorker = async (worker: Worker) => {
   const bindings = { text: sitemapsBindings, json: [sitemapsManifestBinding] }
 
   const code = await fs.readFile(
-    path.resolve('workers/sitemaps-worker.js'),
+    path.resolve(__dirname, './workers/sitemaps-worker.js'),
     'utf-8'
   )
 
