@@ -22,7 +22,7 @@ const fetchSsLocales = async (url: string, request: Fetcher) => {
     }
   })
 
-  if (status < 200 || status < 300) { throw new Error(`SS Locales API responded with NOT OK: ${status}`) }
+  if (status < 200 || 300 < status) { throw new Error(`SS Locales API responded with NOT OK: ${status}`) }
 
   const res = await body.json()
 
