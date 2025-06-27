@@ -10,6 +10,9 @@ import { usePagesApi } from './pages-apis/index.js'
 
 import type { ApiType, Filter, Locale, Page, Sitemap } from './utils.js'
 
+const __filename = import.meta.filename
+const __dirname = import.meta.dirname
+
 interface ApiConfig {
   type: ApiType
   url: string
@@ -291,7 +294,7 @@ const updateWorker = async (worker: Worker) => {
   const bindings = { text: sitemapsBindings, json: [sitemapsManifestBinding] }
 
   const code = await fs.readFile(
-    path.resolve(__dirname, './workers/sitemaps-worker.js'),
+    path.join(__dirname, './workers/sitemaps-worker.js'),
     'utf-8'
   )
 
