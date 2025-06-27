@@ -10,7 +10,6 @@ import { usePagesApi } from './pages-apis/index.js'
 
 import type { ApiType, Filter, Locale, Page, Sitemap } from './utils.js'
 
-const __filename = import.meta.filename
 const __dirname = import.meta.dirname
 
 interface ApiConfig {
