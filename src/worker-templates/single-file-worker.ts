@@ -1,4 +1,3 @@
-import { ExportedHandler } from '@cloudflare/workers-types'
 export default {
   async fetch (req: Request): Promise<Response> {
     return new Response('$_CONTENT_$', {
