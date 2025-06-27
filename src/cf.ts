@@ -37,38 +37,57 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
       accountId: string,
       name: string,
       code: string,
-      moduleSyntax = true
+      bindings?: {
+        text?: Array<{ name: string, content: string }>
+        json?: Array<{ name: string, content: any }>
+      }
     ) => {
-      const file = new File([code], "worker.js", {
-        type: moduleSyntax
-            ? "application/javascript+module"
-            : "application/javascript",
-      });
       const data = new FormData()
 
-      data.append('worker.js', file)
+      const metadata = {
+        main_module: 'main.js',
+        compatibility_date: '2025-01-01',
+        bindings: [
+          ...(bindings?.text?.map((binding) => ({
+            type: 'plain_text',
+            name: binding.name,
+            text: binding.content
+          })) ?? []),
+          ...(bindings?.json?.map((binding) => ({
+            type: 'json',
+            name: binding.name,
+            json: binding.content
+          })) ?? [])
+        ]
+      }
+
       data.append(
         'metadata',
-        JSON.stringify({
-          ...(moduleSyntax
-            ? { main_module: 'worker.js' }
-            : { body_part: 'worker.js' }),
-          compatibility_date: '2025-01-01'
-        })
+        new Blob([JSON.stringify(metadata)], { type: 'application/json' })
+      )
+      data.append(
+        'main.js',
+        new File([code], 'main.js', { type: 'application/javascript+module' })
       )
 
-      const url =
-        CLOUDFLARE_API_URL + `accounts/${accountId}/workers/scripts/${name}`
+      const { statusCode: status, body } = await request(
+        `${CLOUDFLARE_API_URL}/accounts/${accountId}/workers/scripts/${name}`,
+        {
+          method: 'PUT',
+          headers: { ...authHeaders },
+          body: data
+        }
+      )
 
-      const { ok, status, body } = await request(url, {
-        method: 'PUT',
-        headers: { ...authHeaders },
-        body: data
+      const response: any = await body.json().catch((err) => {
+        console.error(err)
+        return undefined
       })
 
-      if (!ok) {
-        const res = await body.text()
-        throw new Error(`Could not update worker script: ${status}, ${res}`)
+      if (response?.success !== true) {
+        console.log(response)
+        if (response?.errors?.length !== 0) { response.errors.forEach((err: string) => console.error(err)) }
+        throw new Error(`Could not update worker script: ${status}`)
       }
     }
   }

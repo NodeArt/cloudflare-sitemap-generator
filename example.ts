@@ -13,7 +13,7 @@ await updateSitemap({
     {
       name: "sitemap-a",
       accountId: "",
-      authToken: "",
+      auth: { token: "" },
       config: {
         baseUrl: "https://www.example-a.com",
         modules: [
@@ -45,7 +45,7 @@ await updateSitemap({
     {
       name: "sitemap-b",
       accountId: "",
-      authToken: "",
+      auth: { token: "" },
       config: {
         baseUrl: "https://www.example-b.com",
         modules: [
@@ -77,7 +77,7 @@ await updateSitemap({
     {
       name: "sitemap-c",
       accountId: "",
-      authToken: "",
+      auth: { token: "" },
       config: {
         baseUrl: "https://www.example-c.com",
         modules: [

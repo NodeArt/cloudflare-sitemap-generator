@@ -3,10 +3,10 @@
   "compilerOptions": {
     "target": "ES2024",
     "module": "NodeNext",
-    "lib": ["ES2024"],
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
+    "types": ["@cloudflare/workers-types"],
 
     /* Strict Type-Checking Options */
     "strict": true,
@@ -18,12 +18,12 @@
     "isolatedModules": true,
 
     /* Advanced Options */
+    "checkJs": true,
     "declaration": true,
     "declarationMap": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "types": ["@cloudflare/workers-types"],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

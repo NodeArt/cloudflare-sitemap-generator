@@ -10,6 +10,8 @@ import { usePagesApi } from './pages-apis/index.js'
 
 import type { ApiType, Filter, Locale, Page, Sitemap } from './utils.js'
 
+const __dirname = import.meta.dirname
+
 interface ApiConfig {
   type: ApiType
   url: string
@@ -257,27 +259,6 @@ const getSitemaps = async (module: Module): Promise<Sitemap[]> => {
   return sitemaps
 }
 
-const getWorkerCode = async (sitemaps: Sitemap[], sitemapIndex: string) => {
-  const responses: { [path: string]: string } = {
-    '/sitemap-index.xml': sitemapIndex
-  }
-
-  sitemaps.forEach(({ name, xml }) => {
-    responses[`/${name}.xml`] = xml
-  })
-
-  const WORKER_TEMPLATE_PATH = 'worker-templates/sitemaps-worker.js'
-  const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH)
-  const template = await fs.readFile(templateFullPath, 'utf8')
-
-  const code = template.replace(
-    '{}; // RESPONSES',
-    JSON.stringify(responses) + ';'
-  )
-
-  return code
-}
-
 const updateWorker = async (worker: Worker) => {
   console.log('Updating Worker', worker.name)
 
@@ -285,64 +266,50 @@ const updateWorker = async (worker: Worker) => {
 
   for (const module of worker.modules) { sitemaps.push(...(await getSitemaps(module))) }
 
-  const sitemapIndex = generateSitemapIndex(sitemaps)
+  sitemaps.push({
+    name: 'sitemap-index',
+    xml: generateSitemapIndex(sitemaps),
+    baseUrl: ''
+  })
 
-  const workerCode = await getWorkerCode(sitemaps, sitemapIndex)
+  const getSitemapBindingName = (name: string) =>
+    `SITEMAP_${name.replaceAll('-', '_').toUpperCase()}`
 
-  console.log('Updating worker with code', worker.name, workerCode)
+  const sitemapsBindings = sitemaps.map((sitemap) => ({
+    name: getSitemapBindingName(sitemap.name),
+    content: sitemap.xml
+  }))
+
+  const sitemapsManifestBinding = {
+    name: 'SITEMAPS_MANIFEST',
+    content: Object.fromEntries(
+      sitemaps.map((sitemap) => [
+        `/${sitemap.name}.xml`,
+        getSitemapBindingName(sitemap.name)
+      ])
+    )
+  }
+
+  const bindings = { text: sitemapsBindings, json: [sitemapsManifestBinding] }
+
+  const code = await fs.readFile(
+    path.join(__dirname, './workers/sitemaps-worker.js'),
+    'utf-8'
+  )
+
+  console.log(
+    'Updating worker with code and bindings',
+    worker.name,
+    code,
+    bindings
+  )
 
   const { request } = useRequest(worker.proxy ?? null)
   const { uploadWorkerScript } = useCf(worker.auth, request)
-  await uploadWorkerScript(worker.accountId, worker.name, workerCode, false)
+  await uploadWorkerScript(worker.accountId, worker.name, code, bindings)
 }
 
 export const updateSitemap = async (config: Config) => {
   const workers = aggregateConfigIntoWorkers(config)
   for (const worker of workers) await updateWorker(worker)
-}
-
-export const updateWorkers = async (config: {
-  proxy?: ProxyConfig
-
-  response?: {
-    contentType: string
-    content: string
-  }
-
-  workers: Array<{
-    name: string
-    accountId: string
-    auth: CfAuthConfig
-    response?: {
-      contentType: string
-      content: string
-    }
-  }>
-}) => {
-  const { request } = useRequest(config.proxy)
-
-  const workers = config.workers.map((worker) => {
-    const response = config.response ?? worker.response ?? null
-
-    if (response === null) { throw new Error(`Response is NOT defined for worker ${worker.name}`) }
-
-    return { ...worker, response }
-  })
-
-  for (const worker of workers) {
-    console.log('Started updating worker', worker.name)
-
-    const WORKER_TEMPLATE_PATH = 'worker-templates/single-file-worker.js'
-    const templateFullPath = path.join(__dirname, WORKER_TEMPLATE_PATH)
-    const template = await fs.readFile(templateFullPath, 'utf8')
-
-    const code = template
-      .replace('$_CONTENT_TYPE_$', worker.response.contentType)
-      .replace('$_CONTENT_$', worker.response.content)
-
-    console.log('Updating worker with code', worker.name, code)
-
-    const { uploadWorkerScript } = useCf(worker.auth, request)
-    await uploadWorkerScript(worker.accountId, worker.name, code, false)
-  }
 }
