@@ -1,98 +1,98 @@
-import { retry } from "../utils.js";
+import { retry } from '../utils.js'
 
-import type { Fetcher } from "../request.js";
-import type { Locale, Page, Filter } from "../utils.js";
+import type { Fetcher } from '../request.js'
+import type { Locale, Page, Filter } from '../utils.js'
 
-const MAX_RETRY_COUNT = 3;
+const MAX_RETRY_COUNT = 3
 
 interface PageInfo {
-  title: string;
-  uniq_seo_title: boolean;
-  lines: number | null;
-  ways: unknown | null;
-  volatility_rating: string | null;
-  hit_rate: string | null;
-  payout: string | null;
-  devices: string[] | null;
-  provider: string | null;
-  identifier: string;
-  seo_title: string;
-  currencies: { [name: string]: { id: number; jackpot: unknown | null } };
-  categories: string[];
-  unfinished_games_for: unknown[];
+  title: string
+  uniq_seo_title: boolean
+  lines: number | null
+  ways: unknown | null
+  volatility_rating: string | null
+  hit_rate: string | null
+  payout: string | null
+  devices: string[] | null
+  provider: string | null
+  identifier: string
+  seo_title: string
+  currencies: { [name: string]: { id: number, jackpot: unknown | null } }
+  categories: string[]
+  unfinished_games_for: unknown[]
 }
 
 const fetchGamesPages = async (url: string, request: Fetcher, page = 1) => {
-  const PAGE_SIZE = 100;
+  const PAGE_SIZE = 100
 
   const { statusCode: status, body } = await request(url, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "user-agent": "sitemap-generator-games",
-      "content-type": "application/json",
-      Accept: "application/vnd.s.v2+json",
-      pragma: "no-cache",
-      priority: "u=1, i",
+      'user-agent': 'sitemap-generator-games',
+      'content-type': 'application/json',
+      Accept: 'application/vnd.s.v2+json',
+      pragma: 'no-cache',
+      priority: 'u=1, i'
     },
     body: JSON.stringify({
-      device: "desktop",
-      page: page,
+      device: 'desktop',
+      page,
       without_territorial_restrictions: true,
       sort: {
-        direction: "ASC",
-        type: "global",
+        direction: 'ASC',
+        type: 'global'
       },
-      page_size: PAGE_SIZE,
-    }),
-  });
+      page_size: PAGE_SIZE
+    })
+  })
 
   if (status < 200 || 300 > status) {
-    const res = await body.text();
+    const res = await body.text()
     throw new Error(
       `Games Pages API responded with NOT OK: ${status} (page: ${page}) ${res}`
-    );
+    )
   }
 
-  const res = await body.json();
+  const res = await body.json()
 
   return res as {
-    data: PageInfo[];
+    data: PageInfo[]
     pagination: {
-      current_page: number;
-      next_page: number | null;
-      prev_page: number | null;
-      total_pages: number;
-      total_count: number;
-    };
-  };
-};
+      current_page: number
+      next_page: number | null
+      prev_page: number | null
+      total_pages: number
+      total_count: number
+    }
+  }
+}
 
 export const getPagesFromGamesApi = async (
   url: string,
   request: Fetcher,
   locales: Locale[],
   filter: Filter
-): Promise<{ locale: Locale; pages: Page[] }[]> => {
-  console.log("Getting Pages from Games API...");
-  const pagesRaw: PageInfo[] = [];
+): Promise<Array<{ locale: Locale, pages: Page[] }>> => {
+  console.log('Getting Pages from Games API...')
+  const pagesRaw: PageInfo[] = []
 
-  let page: number | null = 1;
+  let page: number | null = 1
   while (page !== null) {
-    console.log("Fetching Games from page", page);
+    console.log('Fetching Games from page', page)
     const res = await retry(
-      () => fetchGamesPages(url, request, page!),
+      async () => await fetchGamesPages(url, request, page!),
       MAX_RETRY_COUNT
-    );
+    )
 
-    pagesRaw.push(...res.data);
+    pagesRaw.push(...res.data)
 
-    page = res.pagination.next_page;
+    page = res.pagination.next_page
   }
 
   const filterPage = (page: PageInfo) => {
-    const filters = filter.include ?? filter.exclude;
+    const filters = filter.include ?? filter.exclude
 
-    if (filters === undefined) return true;
+    if (filters === undefined) return true
 
     const predicates = [
       filters.ids?.some((id) => page.identifier === id),
@@ -100,41 +100,38 @@ export const getPagesFromGamesApi = async (
       filters.categories?.some((category) =>
         page.categories?.includes(category)
       ),
-      filters.providers?.some((provider) => page.provider === provider),
-    ];
+      filters.providers?.some((provider) => page.provider === provider)
+    ]
 
-    if (filter.include)
-      if (predicates.some((isSatisfied) => isSatisfied === false)) return false;
+    if (filter.include != null) { if (predicates.some((isSatisfied) => isSatisfied === false)) return false }
 
-    if (filter.exclude)
-      if (predicates.some((isSatisfied) => isSatisfied === true)) return false;
+    if (filter.exclude != null) { if (predicates.some((isSatisfied) => isSatisfied === true)) return false }
 
-    return true;
-  };
+    return true
+  }
 
   const allPaths = pagesRaw
     .filter(filterPage)
-    .map((page) => `game/${page.seo_title}`);
+    .map((page) => `game/${page.seo_title}`)
 
-  const pathsByLocales = locales.map((locale) => ({ locale, paths: allPaths }));
+  const pathsByLocales = locales.map((locale) => ({ locale, paths: allPaths }))
 
   return pathsByLocales.map(({ locale, paths }) => ({
     locale,
     pages: paths.map((path) => {
-      const alternates: { path: string; lang: string }[] = [];
+      const alternates: Array<{ path: string, lang: string }> = []
       for (const otherLoc of pathsByLocales) {
-        if (otherLoc.locale === locale) continue;
-        if (otherLoc.paths.includes(path))
-          alternates.push({ lang: otherLoc.locale, path });
+        if (otherLoc.locale === locale) continue
+        if (otherLoc.paths.includes(path)) { alternates.push({ lang: otherLoc.locale, path }) }
       }
 
       return {
         path,
         lang: locale,
         priority: 0.4,
-        freq: "monthly",
-        alternates,
-      };
-    }),
-  }));
-};
+        freq: 'monthly',
+        alternates
+      }
+    })
+  }))
+}

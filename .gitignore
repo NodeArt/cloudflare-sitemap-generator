@@ -5,3 +5,5 @@ node_modules/
 sitemap.xml
 
 dist/
+
+/**/*.js
