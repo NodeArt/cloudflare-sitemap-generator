@@ -284,15 +284,47 @@ const updateWorker = async (worker: Worker) => {
   for (const module of worker.modules)
     sitemaps.push(...(await getSitemaps(module)));
 
-  const sitemapIndex = generateSitemapIndex(sitemaps);
+  sitemaps.push({
+    name: "sitemap-index",
+    xml: generateSitemapIndex(sitemaps),
+    baseUrl: "",
+  });
 
-  const workerCode = await getWorkerCode(sitemaps, sitemapIndex);
+  const getSitemapBindingName = (name: string) =>
+    `SITEMAP_${name.replaceAll("-", "_").toUpperCase()}`;
 
-  console.log("Updating worker with code", worker.name, workerCode);
+  const sitemapsBindings = sitemaps.map((sitemap) => ({
+    name: getSitemapBindingName(sitemap.name),
+    content: sitemap.xml,
+  }));
+
+  const sitemapsManifestBinding = {
+    name: "SITEMAPS_MANIFEST",
+    content: Object.fromEntries(
+      sitemaps.map((sitemap) => [
+        `/${sitemap.name}.xml`,
+        getSitemapBindingName(sitemap.name),
+      ])
+    ),
+  };
+
+  const bindings = { text: sitemapsBindings, json: [sitemapsManifestBinding] };
+
+  const code = await fs.readFile(
+    path.resolve("workers/sitemaps-worker.js"),
+    "utf-8"
+  );
+
+  console.log(
+    "Updating worker with code and bindings",
+    worker.name,
+    code,
+    bindings
+  );
 
   const { request } = useRequest(worker.proxy ?? null);
   const { uploadWorkerScript } = useCf(worker.auth, request);
-  await uploadWorkerScript(worker.accountId, worker.name, workerCode, false);
+  await uploadWorkerScript(worker.accountId, worker.name, code, bindings);
 };
 
 export const updateSitemap = async (config: Config) => {
@@ -343,6 +375,6 @@ export const updateWorkers = async (config: {
     console.log("Updating worker with code", worker.name, code);
 
     const { uploadWorkerScript } = useCf(worker.auth, request);
-    await uploadWorkerScript(worker.accountId, worker.name, code, false);
+    await uploadWorkerScript(worker.accountId, worker.name, code);
   }
 };
