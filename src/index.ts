@@ -272,37 +272,21 @@ const updateWorker = async (worker: Worker) => {
     baseUrl: ''
   })
 
-  const getSitemapBindingName = (name: string) =>
-    `SITEMAP_${name.replaceAll('-', '_').toUpperCase()}`
-
-  const sitemapsBindings = sitemaps.map((sitemap) => ({
-    name: getSitemapBindingName(sitemap.name),
-    content: sitemap.xml
-  }))
-
-  const sitemapsManifestBinding = {
-    name: 'SITEMAPS_MANIFEST',
-    content: Object.fromEntries(
-      sitemaps.map((sitemap) => [
-        `/${sitemap.name}.xml`,
-        getSitemapBindingName(sitemap.name)
-      ])
-    )
-  }
-
-  const bindings = { text: sitemapsBindings, json: [sitemapsManifestBinding] }
+  const sitemapsRouter = Object.fromEntries(
+    sitemaps.map((sitemap) => [`/${sitemap.name}.xml`, sitemap.xml])
+  )
 
   const code = await fs.readFile(
-    path.join(__dirname, './workers/sitemaps-worker.js'),
+    path.join(__dirname, './workers/sitemaps-worker-str.js'),
     'utf-8'
   )
 
-  console.log(
-    'Updating worker with code and bindings',
-    worker.name,
-    code,
-    bindings
+  const code = codeTemplate.replace(
+    "{ /* SITEMAPS_ROUTER */ }", 
+    JSON.stringify(sitemapsRouter),
   )
+
+  console.log('Updating worker with code', worker.name, code)
 
   const { request } = useRequest(worker.proxy ?? null)
   const { uploadWorkerScript } = useCf(worker.auth, request)
