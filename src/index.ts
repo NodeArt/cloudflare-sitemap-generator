@@ -290,7 +290,7 @@ const updateWorker = async (worker: Worker) => {
 
   const { request } = useRequest(worker.proxy ?? null)
   const { uploadWorkerScript } = useCf(worker.auth, request)
-  await uploadWorkerScript(worker.accountId, worker.name, code, bindings)
+  await uploadWorkerScript(worker.accountId, worker.name, code)
 }
 
 export const updateSitemap = async (config: Config) => {
