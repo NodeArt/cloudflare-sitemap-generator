@@ -1,7 +1,7 @@
 export default {
   async fetch (request): Promise<Response> {
     try {
-      const router = { /* SITEMAPS_ROUTER */ }
+      const router: { [path: string]: string } = { /* SITEMAPS_ROUTER */ }
       const url = new URL(request.url)
       if (!Object.hasOwn(router, url.pathname)) return await fetch(request)
       const response = router[url.pathname]
