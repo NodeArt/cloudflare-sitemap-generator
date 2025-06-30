@@ -276,7 +276,7 @@ const updateWorker = async (worker: Worker) => {
     sitemaps.map((sitemap) => [`/${sitemap.name}.xml`, sitemap.xml])
   )
 
-  const code = await fs.readFile(
+  const codeTemplate = await fs.readFile(
     path.join(__dirname, './workers/sitemaps-worker-str.js'),
     'utf-8'
   )
