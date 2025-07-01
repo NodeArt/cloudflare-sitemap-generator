@@ -277,12 +277,12 @@ const updateWorker = async (worker: Worker) => {
   )
 
   const codeTemplate = await fs.readFile(
-    path.join(__dirname, './workers/sitemaps-worker-str.js'),
+    path.join(__dirname, './workers/sitemaps-worker-with-replace.js'),
     'utf-8'
   )
 
   const code = codeTemplate.replace(
-    "{ /* SITEMAPS_ROUTER */ }", 
+    /\{\s*\/\* SITEMAPS_ROUTER \*\/\s*\}/, 
     JSON.stringify(sitemapsRouter),
   )
 
