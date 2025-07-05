@@ -276,13 +276,26 @@ const updateWorker = async (worker: Worker) => {
     sitemaps.map((sitemap) => [`/${sitemap.name}.xml`, sitemap.xml])
   )
 
-  const codeTemplate = await fs.readFile(
-    path.join(__dirname, './workers/sitemaps-worker-with-replace.js'),
-    'utf-8'
-  )
+  const sitemapsRouterTemplateRegex = /\{\s*\/\* SITEMAPS_ROUTER \*\/\s*\}/
+
+  const codeTemplate = await fs
+    .readFile(
+      path.join(__dirname, "./workers/sitemaps-worker-with-replace.js"),
+      "utf-8"
+    )
+    .catch((err) => {
+      console.error(err)
+      return null
+    })
+
+  if (!codeTemplate)
+    throw new Error("Failed to load cf worker script template")
+
+  if (!codeTemplate.match(sitemapsRouterTemplateRegex))
+    throw new Error("Failed to insert sitemaps into cf worker script template")
 
   const code = codeTemplate.replace(
-    /\{\s*\/\* SITEMAPS_ROUTER \*\/\s*\}/, 
+    sitemapsRouterTemplateRegex,
     JSON.stringify(sitemapsRouter),
   )
 
