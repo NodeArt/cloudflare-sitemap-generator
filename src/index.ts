@@ -28,7 +28,7 @@ interface ReplaceConfig {
 type LocaleBaseUrlMap = {[locale: string]: string}
 
 interface LocaleBaseUrlMapConfig {
-  localeBaseUrlMap: LocaleBaseUrlMap
+  localeBaseUrlMap?: LocaleBaseUrlMap
 }
 
 type ModuleConfig = {
