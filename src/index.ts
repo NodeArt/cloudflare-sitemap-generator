@@ -25,14 +25,22 @@ interface ReplaceConfig {
   replace?: Array<{ pattern: string, value: string }>
 }
 
+type LocaleBaseUrlMap = {[locale: string]: string}
+
+interface LocaleBaseUrlMapConfig {
+  localeBaseUrlMap?: LocaleBaseUrlMap
+}
+
 type ModuleConfig = {
   name: string
   localesListApi: ApiConfig
   pagesListApi: ApiConfig
   proxy?: ProxyConfig
   forceSplitByLocale?: boolean
-} & FilterConfig &
-ReplaceConfig
+} & 
+FilterConfig &
+ReplaceConfig & 
+LocaleBaseUrlMapConfig
 
 type Strict = 'strict'
 type Loose = 'loose'
@@ -40,10 +48,10 @@ type Loose = 'loose'
 type BaseConfig<
   BaseUrlMode extends Strict | Loose = Strict,
   ModulesMode extends Strict | Loose = Strict
-> = {
-  proxy?: ProxyConfig
-} & FilterConfig &
+> = { proxy?: ProxyConfig } & 
+FilterConfig &
 ReplaceConfig &
+LocaleBaseUrlMapConfig &
 (BaseUrlMode extends Strict ? { baseUrl: string } : { baseUrl?: string }) &
 (ModulesMode extends Strict
   ? { modules: ModuleConfig[] }
@@ -73,6 +81,7 @@ interface Module {
   forceSplitByLocale: boolean
   filter: Filter
   replace: Array<{ pattern: string, value: string }>
+  localeBaseUrlMap: {[locale: string]: string}
   proxy?: ProxyConfig
   baseUrl: string
 }
@@ -98,6 +107,7 @@ const aggregateConfigIntoWorkers = (config: Config): Worker[] =>
         baseUrl: worker.config?.baseUrl ?? config.baseUrl,
         filter: worker.config?.filter ?? config.filter ?? {},
         replace: worker.config?.replace ?? config.replace ?? [],
+        localeBaseUrlMap: worker.config?.localeBaseUrlMap ?? config.localeBaseUrlMap ?? {},
         proxy: worker.config?.proxy ?? config.proxy,
         modules: worker.config?.modules ?? config.modules ?? []
       }
@@ -116,6 +126,7 @@ const aggregateConfigIntoWorkers = (config: Config): Worker[] =>
           forceSplitByLocale: module.forceSplitByLocale ?? false,
           filter: module.filter ?? workerConfig.filter,
           replace: module.replace ?? workerConfig.replace,
+          localeBaseUrlMap: module.localeBaseUrlMap ?? workerConfig.localeBaseUrlMap,
           proxy: module.proxy ?? workerConfig.proxy,
           baseUrl: workerConfig.baseUrl!
         }))
@@ -137,7 +148,11 @@ const generateUrl = (
   return new URL(`${localeSegment}${pathSegment}`, base).href
 }
 
-const generateSitemap = (baseURL: string, pages: Page[]) => {
+const generateSitemap = (
+  baseURL: string, 
+  pages: Page[], 
+  localeBaseUrlMap: LocaleBaseUrlMap = {}
+) => {
   const xml = xmlBuilder
     .create('urlset', { version: '1.0', encoding: 'UTF-8' })
     .att({
@@ -146,7 +161,11 @@ const generateSitemap = (baseURL: string, pages: Page[]) => {
     })
 
   for (const page of pages) {
-    const url = generateUrl(baseURL, page.path, page.lang)
+    const url = generateUrl(
+      localeBaseUrlMap[page.lang] ?? baseURL, 
+      page.path, 
+      page.lang
+    )
 
     const xUrl = xml.ele('url')
     xUrl.ele('loc', url)
@@ -157,7 +176,11 @@ const generateSitemap = (baseURL: string, pages: Page[]) => {
       xUrl.ele('xhtml:link').att({
         rel: 'alternate',
         hreflang: alt.lang,
-        href: generateUrl(baseURL, alt.path, alt.lang)
+        href: generateUrl(
+          localeBaseUrlMap[page.lang] ?? baseURL, 
+          alt.path, 
+          alt.lang
+        )
       })
     }
   }
@@ -223,7 +246,7 @@ const getSitemaps = async (module: Module): Promise<Sitemap[]> => {
   const getSitemap = (name: string, pages: Page[]): Sitemap => {
     const xml = module.replace.reduce(
       (str, { pattern, value }) => str.replaceAll(pattern, value),
-      generateSitemap(module.baseUrl, pages)
+      generateSitemap(module.baseUrl, pages, module.localeBaseUrlMap)
     )
     return { name, xml, baseUrl: module.baseUrl }
   }
