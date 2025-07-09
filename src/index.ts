@@ -177,7 +177,7 @@ const generateSitemap = (
         rel: 'alternate',
         hreflang: alt.lang,
         href: generateUrl(
-          localeBaseUrlMap[page.lang] ?? baseURL, 
+          localeBaseUrlMap[alt.lang] ?? baseURL, 
           alt.path, 
           alt.lang
         )
