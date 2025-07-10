@@ -3,6 +3,7 @@ import { retry } from '../utils.js'
 import type { Fetcher } from '../request.js'
 import type { Locale, Page, Filter } from '../utils.js'
 
+const API_TIMEOUT = 1000
 const MAX_RETRY_COUNT = 3
 
 interface PageInfo {
@@ -79,6 +80,7 @@ export const getPagesFromGamesApi = async (
   let page: number | null = 1
   while (page !== null) {
     console.log('Fetching Games from page', page)
+    await new Promise((r) => setTimeout(r, API_TIMEOUT))
     const res = await retry(
       async () => await fetchGamesPages(url, request, page!),
       MAX_RETRY_COUNT
