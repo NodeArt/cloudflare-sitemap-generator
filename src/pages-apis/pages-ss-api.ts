@@ -3,6 +3,7 @@ import { retry } from '../utils.js'
 import type { Fetcher } from '../request.ts'
 import type { Locale, Page, Priority, ChangeFrequency, Filter } from '../utils.js'
 
+const API_TIMEOUT = 1000
 const MAX_RETRY_COUNT = 5
 
 interface PageInfo {
@@ -141,6 +142,7 @@ export const getPagesFromSsApi = async (
 
     for (const path of allPaths) {
       console.log('Checking Page Details using SS API for', path, locale)
+      await new Promise((r) => setTimeout(r, API_TIMEOUT))
       const details = await fetchSSPageDetails(url, path, locale, request)
       if (details === null) continue
       if (details.blocks?.noindex || details.blocks?.invisible_route) continue
