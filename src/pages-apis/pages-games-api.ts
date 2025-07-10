@@ -4,7 +4,7 @@ import type { Fetcher } from '../request.js'
 import type { Locale, Page, Filter } from '../utils.js'
 
 const API_TIMEOUT = 1000
-const MAX_RETRY_COUNT = 3
+const MAX_RETRY_COUNT = 5
 
 interface PageInfo {
   title: string
