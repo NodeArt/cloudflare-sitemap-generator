@@ -39,7 +39,7 @@ export const useRequest = (
 
   dispatcher = dispatcher.compose([
     interceptors.dns({
-      maxTTL: 60 * 1000,
+      maxTTL: 5 * 60 * 1000,
       maxItems: 100
     }),
     interceptors.redirect({
