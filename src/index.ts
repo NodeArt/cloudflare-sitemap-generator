@@ -324,7 +324,7 @@ const updateWorker = async (worker: Worker) => {
 
   console.log('Updating worker with code', worker.name, code)
 
-  const { request } = useRequest(worker.proxy ?? null)
+  const { request } = useRequest() // ! WARNING ! no proxy (add `worker.proxy ?? null` to use proxy)
   const { uploadWorkerScript } = useCf(worker.auth, request)
   await uploadWorkerScript(worker.accountId, worker.name, code)
 }
