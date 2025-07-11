@@ -16,8 +16,8 @@ export type Fetcher = typeof request
 
 const retryOptions: RetryHandler.RetryOptions = {
   maxRetries: 10, // Maximum number of retry attempts
-  minTimeout: 2000, // Minimum time to wait before retrying (1 second)
-  timeoutFactor: 3 // Factor by which the timeout increases for each retry (exponential backoff)
+  minTimeout: 5000, // Minimum time to wait before retrying (1 second)
+  timeoutFactor: 5 // Factor by which the timeout increases for each retry (exponential backoff)
 }
 
 export const useRequest = (
@@ -39,7 +39,7 @@ export const useRequest = (
 
   dispatcher = dispatcher.compose([
     interceptors.dns({
-      maxTTL: 60 * 1000,
+      maxTTL: 5 * 60 * 1000,
       maxItems: 100
     }),
     interceptors.redirect({
