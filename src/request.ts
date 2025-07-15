@@ -19,6 +19,7 @@ const retryOptions: RetryHandler.RetryOptions = {
   minTimeout: 5000, // Minimum time to wait before retrying (5 second)
   timeoutFactor: 5, // Factor by which the timeout increases for each retry (exponential backoff)
   statusCodes: [504],
+  maxTimeout: 10*60*1000, // Maximum number of milliseconds to wait before retrying (10 minutes)
 }
 
 export const useRequest = (
