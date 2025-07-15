@@ -17,7 +17,8 @@ export type Fetcher = typeof request
 const retryOptions: RetryHandler.RetryOptions = {
   maxRetries: 10, // Maximum number of retry attempts
   minTimeout: 5000, // Minimum time to wait before retrying (5 second)
-  timeoutFactor: 5 // Factor by which the timeout increases for each retry (exponential backoff)
+  timeoutFactor: 5, // Factor by which the timeout increases for each retry (exponential backoff)
+  statusCodes: [504],
 }
 
 export const useRequest = (
