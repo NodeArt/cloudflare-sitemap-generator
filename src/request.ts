@@ -34,7 +34,9 @@ export const useRequest = (
         `${proxy.username}:${proxy.password}`
       ).toString('base64')}`,
       headers: { 'proxy-connection': 'keep-alive' },
-      connections: 5
+      connections: 5,
+      connectTimeout: 60 * 1000, // The maximum amount of time, in milliseconds, to wait for a connection to be established with a server. If a connection is not made within this timeframe, undici will terminate the attempt and throw a ConnectTimeoutError. (1 minute)
+      keepAliveTimeout: 60 * 1000 // The timeout, in milliseconds, after which a socket without active requests will time out. Monitors time between activity on a connected socket. This value may be overridden by keep-alive hints from the server. See MDN: HTTP - Headers - Keep-Alive directives for more details. (1 minute)
     })
     dispatcher = agent
   }
