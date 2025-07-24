@@ -53,10 +53,26 @@ export const useRequest = (
   ])
 
   return {
-    request: async (input, init) =>
-      await request(input, { dispatcher, ...init }).catch((err) => {
-        err.message += `\t ${JSON.stringify({ input, init })}`
-        throw err
-      })
+    request: async (input, init) => {
+      const maxRetries = 10
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          return await request(input, { dispatcher, ...init })
+        } catch (err: any) {
+          const isRetryable = err?.code === 'UND_ERR_ABORTED'
+
+          if (isRetryable) {
+            const delay = 1000 * (attempt + 1)
+            console.warn(`Retry #${attempt + 1} for ${input} after ${delay}ms due to: ${err.code || err.message}`)
+            await new Promise(res => setTimeout(res, delay))
+            continue
+          }
+
+          err.message += `\n${JSON.stringify({ input, init })}`
+          throw err
+        }
+      }
+      throw new Error(`Failed after ${maxRetries} retries for: ${input}`)
+    }
   }
 }
