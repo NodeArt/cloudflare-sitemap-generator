@@ -37,9 +37,9 @@ type ModuleConfig = {
   pagesListApi: ApiConfig
   proxy?: ProxyConfig
   forceSplitByLocale?: boolean
-} & 
+} &
 FilterConfig &
-ReplaceConfig & 
+ReplaceConfig &
 LocaleBaseUrlMapConfig
 
 type Strict = 'strict'
@@ -48,7 +48,7 @@ type Loose = 'loose'
 type BaseConfig<
   BaseUrlMode extends Strict | Loose = Strict,
   ModulesMode extends Strict | Loose = Strict
-> = { proxy?: ProxyConfig } & 
+> = { proxy?: ProxyConfig } &
 FilterConfig &
 ReplaceConfig &
 LocaleBaseUrlMapConfig &
@@ -149,8 +149,8 @@ const generateUrl = (
 }
 
 const generateSitemap = (
-  baseURL: string, 
-  pages: Page[], 
+  baseURL: string,
+  pages: Page[],
   localeBaseUrlMap: LocaleBaseUrlMap = {}
 ) => {
   const xml = xmlBuilder
@@ -162,8 +162,8 @@ const generateSitemap = (
 
   for (const page of pages) {
     const url = generateUrl(
-      localeBaseUrlMap[page.lang] ?? baseURL, 
-      page.path, 
+      localeBaseUrlMap[page.lang] ?? baseURL,
+      page.path,
       page.lang
     )
 
@@ -283,50 +283,71 @@ const getSitemaps = async (module: Module): Promise<Sitemap[]> => {
 }
 
 const updateWorker = async (worker: Worker) => {
-  console.log('Updating Worker', worker.name)
+  for (const module of worker.modules) {
+    console.log('Updating Worker for module', module.name)
 
-  const sitemaps: Sitemap[] = []
+    const sitemaps: Sitemap[] = await getSitemaps(module)
+    const MAX_WORKERS = 3
+    const MAX_SITEMAPS_PER_WORKER = 40
 
-  for (const module of worker.modules) { sitemaps.push(...(await getSitemaps(module))) }
+    const limitedSitemaps = sitemaps.slice(0, MAX_WORKERS * MAX_SITEMAPS_PER_WORKER)
 
-  sitemaps.push({
-    name: 'sitemap-index',
-    xml: generateSitemapIndex(sitemaps),
-    baseUrl: ''
-  })
+    for (let workerIndex = 0; workerIndex < MAX_WORKERS; workerIndex++) {
+      const start = workerIndex * MAX_SITEMAPS_PER_WORKER
+      const end = start + MAX_SITEMAPS_PER_WORKER
+      const chunk = limitedSitemaps.slice(start, end)
+      if (chunk.length === 0) continue
 
-  const sitemapsRouter = Object.fromEntries(
-    sitemaps.map((sitemap) => [`/${sitemap.name}.xml`, sitemap.xml])
-  )
+      const chunkWithRenamed = chunk.map((sitemap, sitemapIndex) => ({
+        ...sitemap,
+        name: `${worker.name}-${module.name}-${workerIndex + 1}-${sitemapIndex + 1}`
+      }))
 
-  const sitemapsRouterTemplateRegex = /\{\s*\/\* SITEMAPS_ROUTER \*\/\s*\}/
+      const chunkWithIndex = [
+        ...chunkWithRenamed,
+        {
+          name: 'sitemap-index',
+          xml: generateSitemapIndex(chunkWithRenamed),
+          baseUrl: ''
+        }
+      ]
 
-  const codeTemplate = await fs
-    .readFile(
-      path.join(__dirname, "./workers/sitemaps-worker-with-replace.js"),
-      "utf-8"
-    )
-    .catch((err) => {
-      console.error(err)
-      return null
-    })
+      const sitemapsRouter = Object.fromEntries(
+          chunkWithIndex.map((sitemap) => [`/${sitemap.name}.xml`, sitemap.xml])
+      )
 
-  if (!codeTemplate)
-    throw new Error("Failed to load cf worker script template")
+      const sitemapsRouterTemplateRegex = /\{\s*\/\* SITEMAPS_ROUTER \*\/\s*\}/
 
-  if (!codeTemplate.match(sitemapsRouterTemplateRegex))
-    throw new Error("Failed to insert sitemaps into cf worker script template")
+      const codeTemplate = await fs
+          .readFile(
+              path.join(__dirname, "./workers/sitemaps-worker-with-replace.js"),
+              "utf-8"
+          )
+          .catch((err) => {
+            console.error(err)
+            return null
+          })
 
-  const code = codeTemplate.replace(
-    sitemapsRouterTemplateRegex,
-    JSON.stringify(sitemapsRouter),
-  )
+      if (!codeTemplate)
+        throw new Error("Failed to load cf worker script template")
 
-  console.log('Updating worker with code', worker.name, code)
+      if (!codeTemplate.match(sitemapsRouterTemplateRegex))
+        throw new Error("Failed to insert sitemaps into cf worker script template")
 
-  const { request } = useRequest() // ! WARNING ! no proxy (add `worker.proxy ?? null` to use proxy)
-  const { uploadWorkerScript } = useCf(worker.auth, request)
-  await uploadWorkerScript(worker.accountId, worker.name, code)
+      const code = codeTemplate.replace(
+          sitemapsRouterTemplateRegex,
+          JSON.stringify(sitemapsRouter),
+      )
+
+      const workerName = `${worker.name}-${module.name}-${workerIndex + 1}`
+
+      console.log('Updating worker with code', workerName)
+
+      const { request } = useRequest() // ! WARNING ! no proxy (add `worker.proxy ?? null` to use proxy)
+      const { uploadWorkerScript } = useCf(worker.auth, request)
+      await uploadWorkerScript(worker.accountId, workerName, code)
+    }
+  }
 }
 
 export const updateSitemap = async (config: Config) => {

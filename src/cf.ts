@@ -70,6 +70,9 @@ export const useCf = (auth: CfAuthConfig, request: Fetcher) => {
         new File([code], 'main.js', { type: 'application/javascript+module' })
       )
 
+      const codeSize = new TextEncoder().encode(code).length
+      console.warn(`Generated worker "${name}" with size: ${(codeSize / (1024 * 1024)).toFixed(2)} MiB`)
+
       const { statusCode: status, body } = await request(
         `${CLOUDFLARE_API_URL}/accounts/${accountId}/workers/scripts/${name}`,
         {
