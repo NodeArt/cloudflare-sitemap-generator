@@ -12,6 +12,9 @@ import type { ApiType, Filter, Locale, Page, Sitemap } from './utils.js'
 
 const __dirname = import.meta.dirname
 
+const MAX_WORKERS = 3
+const MAX_SITEMAPS_PER_WORKER = 40
+
 interface ApiConfig {
   type: ApiType
   url: string
@@ -282,70 +285,131 @@ const getSitemaps = async (module: Module): Promise<Sitemap[]> => {
   return sitemaps
 }
 
+const collectModuleSitemaps = async (module: Module): Promise<{ sitemaps: Sitemap[], namedSitemaps: Sitemap[] }> => {
+  console.log('Getting sitemaps for module', module.name)
+
+  const sitemaps: Sitemap[] = await getSitemaps(module)
+
+
+  const limitedSitemaps = sitemaps.slice(0, MAX_WORKERS * MAX_SITEMAPS_PER_WORKER)
+  const namedSitemaps: Sitemap[] = []
+
+  // Always create exactly MAX_WORKERS workers, even if some are empty
+  for (let workerIndex = 0; workerIndex < MAX_WORKERS; workerIndex++) {
+    const start = workerIndex * MAX_SITEMAPS_PER_WORKER
+    const end = start + MAX_SITEMAPS_PER_WORKER
+    const chunk = limitedSitemaps.slice(start, end)
+
+    // Create sitemaps even for empty chunks to ensure consistent naming
+    const chunkWithRenamed = chunk.map((sitemap, sitemapIndex) => ({
+      ...sitemap,
+      name: `sitemap-${module.name}-${workerIndex + 1}-${sitemapIndex + 1}`
+    }))
+
+    namedSitemaps.push(...chunkWithRenamed)
+  }
+
+  console.log(`Module ${module.name}: Created ${namedSitemaps.length} named sitemaps`)
+  return { sitemaps: limitedSitemaps, namedSitemaps }
+}
+
+// Helper function to create a worker script
+const createWorkerScript = async (sitemaps: Sitemap[], globalSitemapIndex: Sitemap): Promise<string> => {
+  const sitemapsWithIndex = [...sitemaps, globalSitemapIndex]
+
+  const sitemapsRouter = Object.fromEntries(
+      sitemapsWithIndex.map((sitemap) => [`/${sitemap.name}.xml`, sitemap.xml])
+  )
+
+  const sitemapsRouterTemplateRegex = /\{\s*\/\* SITEMAPS_ROUTER \*\/\s*\}/
+
+  const codeTemplate = await fs
+      .readFile(
+          path.join(__dirname, "./workers/sitemaps-worker-with-replace.js"),
+          "utf-8"
+      )
+      .catch((err) => {
+        console.error(err)
+        return null
+      })
+
+  if (!codeTemplate)
+    throw new Error("Failed to load cf worker script template")
+
+  if (!codeTemplate.match(sitemapsRouterTemplateRegex))
+    throw new Error("Failed to insert sitemaps into cf worker script template")
+
+  return codeTemplate.replace(
+      sitemapsRouterTemplateRegex,
+      JSON.stringify(sitemapsRouter),
+  )
+}
+
+// Helper function to upload a worker to Cloudflare
+const uploadWorkerToCloudflare = async (worker: Worker, workerName: string, code: string): Promise<void> => {
+  console.log('Updating worker with code', workerName)
+
+  const { request } = useRequest() // ! WARNING ! no proxy (add `worker.proxy ?? null` to use proxy)
+  const { uploadWorkerScript } = useCf(worker.auth, request)
+  await uploadWorkerScript(worker.accountId, workerName, code)
+}
+
+// Helper function to log global sitemap index
+const logGlobalSitemapIndex = (globalSitemapIndex: Sitemap, allSitemaps: Sitemap[]): void => {
+  console.log('=== GLOBAL SITEMAP INDEX CONTENT ===')
+  console.log(globalSitemapIndex.xml)
+  console.log('=== END GLOBAL SITEMAP INDEX ===')
+  console.log(`Total sitemaps in global index: ${allSitemaps.length}`)
+}
+
 const updateWorker = async (worker: Worker) => {
+  // Collect all sitemaps from all modules
+  const allSitemaps: Sitemap[] = []
+  const moduleSitemapsMap = new Map<string, Sitemap[]>()
+
+  for (const module of worker.modules) {
+    const { sitemaps, namedSitemaps } = await collectModuleSitemaps(module)
+    moduleSitemapsMap.set(module.name, sitemaps)
+    allSitemaps.push(...namedSitemaps)
+  }
+
+  console.log(`Total sitemaps collected: ${allSitemaps.length}`)
+  console.log('Sitemaps by module:')
+  for (const [moduleName, sitemaps] of moduleSitemapsMap.entries()) {
+    console.log(`  ${moduleName}: ${sitemaps.length} sitemaps`)
+  }
+
+  // Generate global sitemap index
+  const globalSitemapIndex = {
+    name: 'sitemap-index',
+    xml: generateSitemapIndex(allSitemaps),
+    baseUrl: ''
+  }
+
+  logGlobalSitemapIndex(globalSitemapIndex, allSitemaps)
+
+  // Create and upload workers
   for (const module of worker.modules) {
     console.log('Updating Worker for module', module.name)
 
-    const sitemaps: Sitemap[] = await getSitemaps(module)
-    const MAX_WORKERS = 3
-    const MAX_SITEMAPS_PER_WORKER = 40
+    const limitedSitemaps = moduleSitemapsMap.get(module.name) || []
 
-    const limitedSitemaps = sitemaps.slice(0, MAX_WORKERS * MAX_SITEMAPS_PER_WORKER)
-
+    // Always create exactly MAX_WORKERS workers
     for (let workerIndex = 0; workerIndex < MAX_WORKERS; workerIndex++) {
       const start = workerIndex * MAX_SITEMAPS_PER_WORKER
       const end = start + MAX_SITEMAPS_PER_WORKER
       const chunk = limitedSitemaps.slice(start, end)
-      if (chunk.length === 0) continue
 
+      // Create sitemaps even for empty chunks to ensure consistent naming
       const chunkWithRenamed = chunk.map((sitemap, sitemapIndex) => ({
         ...sitemap,
-        name: `${worker.name}-${module.name}-${workerIndex + 1}-${sitemapIndex + 1}`
+        name: `sitemap-${module.name}-${workerIndex + 1}-${sitemapIndex + 1}`
       }))
 
-      const chunkWithIndex = [
-        ...chunkWithRenamed,
-        {
-          name: 'sitemap-index',
-          xml: generateSitemapIndex(chunkWithRenamed),
-          baseUrl: ''
-        }
-      ]
-
-      const sitemapsRouter = Object.fromEntries(
-          chunkWithIndex.map((sitemap) => [`/${sitemap.name}.xml`, sitemap.xml])
-      )
-
-      const sitemapsRouterTemplateRegex = /\{\s*\/\* SITEMAPS_ROUTER \*\/\s*\}/
-
-      const codeTemplate = await fs
-          .readFile(
-              path.join(__dirname, "./workers/sitemaps-worker-with-replace.js"),
-              "utf-8"
-          )
-          .catch((err) => {
-            console.error(err)
-            return null
-          })
-
-      if (!codeTemplate)
-        throw new Error("Failed to load cf worker script template")
-
-      if (!codeTemplate.match(sitemapsRouterTemplateRegex))
-        throw new Error("Failed to insert sitemaps into cf worker script template")
-
-      const code = codeTemplate.replace(
-          sitemapsRouterTemplateRegex,
-          JSON.stringify(sitemapsRouter),
-      )
-
+      const code = await createWorkerScript(chunkWithRenamed, globalSitemapIndex)
       const workerName = `${worker.name}-${module.name}-${workerIndex + 1}`
 
-      console.log('Updating worker with code', workerName)
-
-      const { request } = useRequest() // ! WARNING ! no proxy (add `worker.proxy ?? null` to use proxy)
-      const { uploadWorkerScript } = useCf(worker.auth, request)
-      await uploadWorkerScript(worker.accountId, workerName, code)
+      await uploadWorkerToCloudflare(worker, workerName, code)
     }
   }
 }

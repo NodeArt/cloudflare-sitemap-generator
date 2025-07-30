@@ -59,7 +59,10 @@ export const useRequest = (
         try {
           return await request(input, { dispatcher, ...init })
         } catch (err: any) {
-          const isRetryable = err?.code === 'UND_ERR_ABORTED'
+          const isRetryable =
+              err?.code === 'UND_ERR_ABORTED' ||
+              err?.code === 'UND_ERR_HEADERS_TIMEOUT' ||
+              err?.code === 'UND_ERR_BODY_TIMEOUT'
 
           if (isRetryable) {
             const delay = 1000 * (attempt + 1)
